@@ -12,7 +12,11 @@ Right click the Hierarchy to add an image target, then right click the image tar
 ![](adding_image_target_and_cube.gif)
 
 ### Texturing Objects
-Adding textures is as easy as dragging and dropping. You can right click in your assets to create a new material, and put a texture under its "albedo" option, or simply change the color of the material. Then you can drag and drop this material onto your object.
+You can right click in your assets to create a new material, and put a texture under its "albedo" option, or simply change the color of the material. Then you can drag and drop this material onto your object.
 
 ![](adding_textures.gif)
 
+### Button Objects
+Select the object in question that you want to make into a button. Then click the "AR.js" menu item, and select "Make Button." You can then change the URL that the button links to in the inspector when the object is selected.
+
+![](making_button.gif)
