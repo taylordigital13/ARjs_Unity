@@ -41,4 +41,4 @@ Also thank you to Or-Aviram for his [Draw Field on condition](https://forum.unit
 
 ## Demonstration
 
-[![Using AR.js Unity Converter](https://imgur.com/a/QcgrgMD)](https://youtu.be/PYs_Y1U2_DI)
+[![Using AR.js Unity Converter](http://i.imgur.com/DiMMC4R.jpg)](https://youtu.be/PYs_Y1U2_DI)
