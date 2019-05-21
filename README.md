@@ -8,9 +8,11 @@ Drop the folder titled "ARjs_Unity" into the Assets folder within your Unity pro
 
 ### Adding Objects
 Right click the Hierarchy to add an image target, then right click the image target to add a shape.
+
 ![](adding_image_target_and_cube.gif)
 
 ### Texturing Objects
 Adding textures is as easy as dragging and dropping. You can right click in your assets to create a new material, and put a texture under its "albedo" option, or simply change the color of the material. Then you can drag and drop this material onto your object.
+
 ![](adding_textures.gif)
 
