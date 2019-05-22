@@ -1,12 +1,18 @@
 ﻿using UnityEngine;
 using UnityEditor;
+using System.IO;
 
 public class ARGameObjectCreator : MonoBehaviour
 {
+    static string path = "Assets/ARjs_Unity/Prefabs/";
+    static string path2 = "Assets/ARjs_Unity/ARjs_Unity/Prefabs/";
+
     [MenuItem("GameObject/AR.js/ImageTarget", false, 9)]
     static void PlaceImageTargetPrefabInScene()
     {
-        GameObject imageTarget = AssetDatabase.LoadAssetAtPath("Assets/ARjs_Unity/Prefabs/ImageTarget.prefab", typeof(GameObject)) as GameObject;
+        string pathToUse = path;
+        if (Directory.Exists(path2)) pathToUse = path2;
+        GameObject imageTarget = AssetDatabase.LoadAssetAtPath(pathToUse + "ImageTarget.prefab", typeof(GameObject)) as GameObject;
         GameObject sceneImageTarget = Instantiate(imageTarget, Vector3.zero, Quaternion.identity) as GameObject;
         HelperFunctions.AddTag("ImageTarget");
         sceneImageTarget.transform.tag = "ImageTarget";
@@ -16,7 +22,9 @@ public class ARGameObjectCreator : MonoBehaviour
     [MenuItem("GameObject/AR.js/Plane", false, 10)]
     static void PlacePlanePrefabInScene()
     {
-        GameObject plane = AssetDatabase.LoadAssetAtPath("Assets/ARjs_Unity/Prefabs/Plane.prefab", typeof(GameObject)) as GameObject;
+        string pathToUse = path;
+        if (Directory.Exists(path2)) pathToUse = path2;
+        GameObject plane = AssetDatabase.LoadAssetAtPath(pathToUse + "Plane.prefab", typeof(GameObject)) as GameObject;
         GameObject scenePlane;
         if (Selection.activeGameObject != null)
         {
@@ -35,7 +43,9 @@ public class ARGameObjectCreator : MonoBehaviour
     [MenuItem("GameObject/AR.js/Cube", false, 11)]
     static void PlaceCubePrefabInScene()
     {
-        GameObject cube = AssetDatabase.LoadAssetAtPath("Assets/ARjs_Unity/Prefabs/Cube.prefab", typeof(GameObject)) as GameObject;
+        string pathToUse = path;
+        if (Directory.Exists(path2)) pathToUse = path2;
+        GameObject cube = AssetDatabase.LoadAssetAtPath(pathToUse + "Cube.prefab", typeof(GameObject)) as GameObject;
         GameObject sceneCube;
         if (Selection.activeGameObject != null)
         {
@@ -54,7 +64,9 @@ public class ARGameObjectCreator : MonoBehaviour
     [MenuItem("GameObject/AR.js/Sphere", false, 12)]
     static void PlaceSpherePrefabInScene()
     {
-        GameObject sphere = AssetDatabase.LoadAssetAtPath("Assets/ARjs_Unity/Prefabs/Sphere.prefab", typeof(GameObject)) as GameObject;
+        string pathToUse = path;
+        if (Directory.Exists(path2)) pathToUse = path2;
+        GameObject sphere = AssetDatabase.LoadAssetAtPath(pathToUse + "Sphere.prefab", typeof(GameObject)) as GameObject;
         GameObject sceneSphere;
         if (Selection.activeGameObject != null)
         {
@@ -73,7 +85,9 @@ public class ARGameObjectCreator : MonoBehaviour
     [MenuItem("GameObject/AR.js/Cylinder", false, 13)]
     static void PlaceCylinderPrefabInScene()
     {
-        GameObject cylinder = AssetDatabase.LoadAssetAtPath("Assets/ARjs_Unity/Prefabs/Cylinder.prefab", typeof(GameObject)) as GameObject;
+        string pathToUse = path;
+        if (Directory.Exists(path2)) pathToUse = path2;
+        GameObject cylinder = AssetDatabase.LoadAssetAtPath(pathToUse + "Cylinder.prefab", typeof(GameObject)) as GameObject;
         GameObject sceneCylinder;
         if (Selection.activeGameObject != null)
         {
