@@ -15,7 +15,7 @@ public class SpriteProcessor : AssetPostprocessor
             TextureImporter textureImporter = (TextureImporter)assetImporter;
             textureImporter.textureType = TextureImporterType.Sprite;
             textureImporter.isReadable = true;
-
         }
+        AssetDatabase.Refresh();
     }
 }

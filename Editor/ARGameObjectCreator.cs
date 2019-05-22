@@ -13,6 +13,7 @@ public class ARGameObjectCreator : MonoBehaviour
         HelperFunctions.AddTag("ImageTarget");
         sceneImageTarget.transform.tag = "ImageTarget";
         sceneImageTarget.name = "ImageTarget";
+        sceneImageTarget.AddComponent<ImageTarget>();
     }
 
     [MenuItem("GameObject/AR.js/Plane", false, 10)]
@@ -91,7 +92,7 @@ public class ARGameObjectCreator : MonoBehaviour
         sceneCylinder.name = "Cylinder";
     }
 
-    [MenuItem("AR.js/MakeButton", false, 14)]
+    [MenuItem("AR.js/MakeButton", false, 4)]
     static void ConvertItemToButton()
     {
         GameObject obj = Selection.activeGameObject;
@@ -102,6 +103,7 @@ public class ARGameObjectCreator : MonoBehaviour
     static bool MakeButtonMenuOptionValidation()
     {
         GameObject obj = Selection.activeGameObject;
+        if (obj == null) return false;
         if((obj.CompareTag("Cube") || obj.CompareTag("Plane") || obj.CompareTag("Sphere") || obj.CompareTag("Cylinder")) && obj.GetComponent<ButtonHelper>()==null)
         {
             return true;
@@ -112,7 +114,7 @@ public class ARGameObjectCreator : MonoBehaviour
         }
     }
 
-    [MenuItem("AR.js/MakeAnimation", false, 14)]
+    [MenuItem("AR.js/MakeAnimation", false, 5)]
     static void ConvertItemToAnimation()
     {
         GameObject obj = Selection.activeGameObject;
@@ -124,6 +126,7 @@ public class ARGameObjectCreator : MonoBehaviour
     static bool MakeAnimationMenuOptionValidation()
     {
         GameObject obj = Selection.activeGameObject;
+        if (obj == null) return false;
         if ((obj.CompareTag("Cube") || obj.CompareTag("Plane") || obj.CompareTag("Sphere") || obj.CompareTag("Cylinder")) && obj.GetComponent<AnimationHelper>() == null)
         {
             return true;
@@ -132,5 +135,11 @@ public class ARGameObjectCreator : MonoBehaviour
         {
             return false;
         }
+    }
+
+    [MenuItem("AR.js/GenerateCustomImageTarget", false, 1)]
+    static void OpenImageTargetGenerator()
+    {
+        Application.OpenURL("https://jeromeetienne.github.io/AR.js/three.js/examples/marker-training/examples/generator.html");
     }
 }

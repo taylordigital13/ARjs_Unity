@@ -6,7 +6,7 @@ using System.Text;
 public class CompileFile : MonoBehaviour
 {
     //Creates a menu item for building out the objects under the ImageTarget in scene as HTML code and saves said code to a file.
-    [MenuItem("AR.js/CompileFiles", false, 9)]
+    [MenuItem("AR.js/CompileFiles", false, 17)]
     static void CompileFileHTML()
     {
         string folderPath = Application.dataPath + "/AR.js-master/aframe/UnityExamples/";
@@ -29,7 +29,10 @@ public class CompileFile : MonoBehaviour
     <a-scene embedded arjs='sourceType: webcam'>
     <a-entity id=""mouseCursor"" cursor=""rayOrigin: mouse"" raycaster=""objects: .intersectable"" button></a-entity>";
 
-        string bottomHTML = @"  <a-marker-camera preset='hiro'></a-marker-camera>
+        string patternName = GameObject.FindWithTag("ImageTarget").GetComponent<ImageTarget>().patternName;
+        string presetText = $"preset=\"hiro\"";
+        if (patternName != "default") presetText = $"type=\"pattern\" url=\"{patternName}\"";
+        string bottomHTML = @"  <a-marker-camera " + presetText + @"></a-marker-camera>
         </a-scene>
 </body>
 </html>";
