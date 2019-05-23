@@ -6,7 +6,9 @@ Drop the main folder into the Assets folder within your Unity project, and make 
 
 ## Usage
 
-### There are two menu items for this. "AR.js/Image Target/1. Generate Image Target" and "AR.js/Image Target/2. Apply Generated Image". The first one will open up the website where you can go to generate both the image and the .patt file that you will need. The second one, should only be used after you already have an ImageTarget in scene. It will open another window where you will need drag and drop both the .patt file and the target image you created. Then hit update. If you don't alter anything before hitting update, it will reset the target to the default HIRO image target. 
+
+### Changing the Image Target
+There are two menu items for this. "AR.js/Image Target/1. Generate Image Target" and "AR.js/Image Target/2. Apply Generated Image". The first one will open up the website where you can go to generate both the image and the .patt file that you will need. The second one, should only be used after you already have an ImageTarget in scene. It will open another window where you will need drag and drop both the .patt file and the target image you created. Then hit update. If you don't alter anything before hitting update, it will reset the target to the default HIRO image target. 
 
 ### Adding Objects
 Right click the Hierarchy to add an image target, then right click the image target to add a shape.
