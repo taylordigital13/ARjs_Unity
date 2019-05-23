@@ -36,7 +36,7 @@ This is the final file and can be opened in a browser to view the AR experience 
 ## How it Works
 The CompileFile.cs script is where the majority of the work happens. It's just a lot of loops and conditional statements that goes through ever object attached to the ImageTarget in scene, and adds HTML text to a StringBuilder accordingly then saves the giant string as a file called index.html
 
-The Animations could use simplified a fair bit. Currently, you create a KeyFrame list for the object and when you export it, it creates a file specific to the object in Assets>Animations>JsonExports. Then when you either run the scene in Unity, or compile the HTML file, it will read back in the KeyFrame list from the json text file. This is unecessary and will be changed in the future. As well as merging the Animation helper and Custom List scripts.
+The Animations could use simplified a fair bit. Currently, you create a KeyFrame list for the object and when you export it, it creates a file specific to the object in Assets>Animations>JsonExports>{Active Scene Name}. Then when you either run the scene in Unity, or compile the HTML file, it will read back in the KeyFrame list from the json text file. This is unecessary and will be changed in the future. As well as merging the Animation helper and Custom List scripts.
 
 ## Acknowledgments
 A huge shout out to Jerome Etienne for enabling Augmented Reality through any web browser. [GitHub again](https://github.com/jeromeetienne/AR.js)
