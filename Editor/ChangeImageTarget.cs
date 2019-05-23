@@ -7,19 +7,21 @@ using UnityEngine;
 public class ChangeImageTarget : ScriptableWizard
 {
     [Header("Image Target Settings")]
-    public string patternLocation = "changeBackToDefaultHiro";
+    public Object ImageTargetPattern;
+    //public string patternLocation = "changeBackToDefaultHiro";
     public Texture2D spriteImage;
 
-    [MenuItem("AR.js/ChangeImageTarget", false, 2)]
+    [MenuItem("AR.js/Image Target/2. Apply Generated Image", false, 2)]
     static void CreateWizard()
     {
-        ScriptableWizard.DisplayWizard<ChangeImageTarget>("Change Target Image", "Update", "Select .patt File");
+        //ScriptableWizard.DisplayWizard<ChangeImageTarget>("Change Target Image", "Update", "Select .patt File");
+        ScriptableWizard.DisplayWizard<ChangeImageTarget>("Change Target Image", "Update");
     }
 
     void OnWizardCreate()
     {
         GameObject imageTarget = GameObject.FindGameObjectWithTag("ImageTarget");
-        if (patternLocation == "changeBackToDefaultHiro")
+        if (ImageTargetPattern == null && spriteImage == null)
         {
             byte[] hiroBytes = File.ReadAllBytes("Assets/ARjs_Unity/Icons/HIRO.jpg");
             Texture2D tex = new Texture2D(2, 2);
@@ -29,8 +31,10 @@ public class ChangeImageTarget : ScriptableWizard
             imageTarget.GetComponent<ImageTarget>().patternName = "default";
             return;
         }
-        if (patternLocation == "" || !patternLocation.Contains(".patt"))
+        if (ImageTargetPattern == null)
         {
+            Debug.Log(ImageTargetPattern.name);
+            Debug.Log(AssetDatabase.GetAssetPath(ImageTargetPattern));
             Debug.LogError("You have to choose a .patt file.");
             Debug.LogError("If you don't have one, go here to generate a .patt file and image:\nhttps://jeromeetienne.github.io/AR.js/three.js/examples/marker-training/examples/generator.html");
             return;
@@ -41,22 +45,27 @@ public class ChangeImageTarget : ScriptableWizard
             return;
         }
 
-        imageTarget.GetComponent<ImageTarget>().patternName = patternLocation.Split('/')[patternLocation.Split('/').Length-1];
+        string destination = GameObject.FindWithTag("ImageTarget").GetComponent<ImageTarget>().destination + 
+        AssetDatabase.GetAssetPath(ImageTargetPattern).Split('/')[AssetDatabase.GetAssetPath(ImageTargetPattern).Split('/').Length - 1];
+
+        File.Copy(AssetDatabase.GetAssetPath(ImageTargetPattern), destination, true);
+        imageTarget.GetComponent<ImageTarget>().patternName = AssetDatabase.GetAssetPath(ImageTargetPattern).Split('/')[AssetDatabase.GetAssetPath(ImageTargetPattern).Split('/').Length-1];
         imageTarget.GetComponent<MeshRenderer>().material.mainTexture = RemoveWhiteBorder(spriteImage);
         AssetDatabase.Refresh();
     }
 
     void OnWizardOtherButton()
     {
-        patternLocation = EditorUtility.OpenFilePanel("Choose .patt file as pattern", "", "patt");
-        string destination = "Assets/AR.js-master/aframe/UnityExamples/" + patternLocation.Split('/')[patternLocation.Split('/').Length-1];
-        File.Copy(patternLocation, destination, true);
+        //patternLocation = EditorUtility.OpenFilePanel("Choose .patt file as pattern", "", "patt");
+        //string destination = "Assets/AR.js-master/aframe/UnityExamples/" + patternLocation.Split('/')[patternLocation.Split('/').Length-1];
+        //File.Copy(patternLocation, destination, true);
     }
 
     void OnWizardUpdate()
     {
+
         //Updates the buttons when you change the size of the array.
-        helpString = "Enter canvas details";
+        helpString = "Leave fields blank to reset to default HIRO image target.";
     }
 
     Texture2D RemoveWhiteBorder(Texture2D texture)

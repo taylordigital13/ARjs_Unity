@@ -8,9 +8,15 @@ public class ARGameObjectCreator : MonoBehaviour
     [MenuItem("GameObject/AR.js/ImageTarget", false, 9)]
     static void PlaceImageTargetPrefabInScene()
     {
+        HelperFunctions.AddTag("ImageTarget");
+        if (GameObject.FindWithTag("ImageTarget") != null)
+        {
+            return;
+        }
         GameObject imageTarget = AssetDatabase.LoadAssetAtPath(pathToUse + "ImageTarget.prefab", typeof(GameObject)) as GameObject;
         GameObject sceneImageTarget = Instantiate(imageTarget, Vector3.zero, Quaternion.identity) as GameObject;
-        HelperFunctions.AddTag("ImageTarget");
+        Selection.activeObject = sceneImageTarget;
+
         sceneImageTarget.transform.tag = "ImageTarget";
         sceneImageTarget.name = "ImageTarget";
         sceneImageTarget.AddComponent<ImageTarget>();
@@ -30,6 +36,7 @@ public class ARGameObjectCreator : MonoBehaviour
             scenePlane = Instantiate(plane, Vector3.zero, Quaternion.identity);
         }
 
+        Selection.activeObject = scenePlane;
         HelperFunctions.AddTag("Plane");
         scenePlane.transform.tag = "Plane";
         scenePlane.name = "Plane";
@@ -49,6 +56,7 @@ public class ARGameObjectCreator : MonoBehaviour
             sceneCube = Instantiate(cube, Vector3.zero, Quaternion.identity);
         }
 
+        Selection.activeObject = sceneCube;
         HelperFunctions.AddTag("Cube");
         sceneCube.transform.tag = "Cube";
         sceneCube.name = "Cube";
@@ -68,6 +76,7 @@ public class ARGameObjectCreator : MonoBehaviour
             sceneSphere = Instantiate(sphere, Vector3.zero, Quaternion.identity);
         }
 
+        Selection.activeObject = sceneSphere;
         HelperFunctions.AddTag("Sphere");
         sceneSphere.transform.tag = "Sphere";
         sceneSphere.name = "Sphere";
@@ -87,19 +96,20 @@ public class ARGameObjectCreator : MonoBehaviour
             sceneCylinder = Instantiate(cylinder, Vector3.zero, Quaternion.identity);
         }
 
+        Selection.activeObject = sceneCylinder;
         HelperFunctions.AddTag("Cylinder");
         sceneCylinder.transform.tag = "Cylinder";
         sceneCylinder.name = "Cylinder";
     }
 
-    [MenuItem("AR.js/MakeButton", false, 4)]
+    [MenuItem("AR.js/Make Button", false, 4)]
     static void ConvertItemToButton()
     {
         GameObject obj = Selection.activeGameObject;
         obj.AddComponent<ButtonHelper>();
     }
 
-    [MenuItem("AR.js/MakeButton", true)]
+    [MenuItem("AR.js/Make Button", true)]
     static bool MakeButtonMenuOptionValidation()
     {
         GameObject obj = Selection.activeGameObject;
@@ -114,7 +124,7 @@ public class ARGameObjectCreator : MonoBehaviour
         }
     }
 
-    [MenuItem("AR.js/MakeAnimation", false, 5)]
+    [MenuItem("AR.js/Make Animation", false, 5)]
     static void ConvertItemToAnimation()
     {
         GameObject obj = Selection.activeGameObject;
@@ -122,7 +132,7 @@ public class ARGameObjectCreator : MonoBehaviour
         obj.AddComponent<CustomList>();
     }
 
-    [MenuItem("AR.js/MakeAnimation", true)]
+    [MenuItem("AR.js/Make Animation", true)]
     static bool MakeAnimationMenuOptionValidation()
     {
         GameObject obj = Selection.activeGameObject;
@@ -137,7 +147,7 @@ public class ARGameObjectCreator : MonoBehaviour
         }
     }
 
-    [MenuItem("AR.js/GenerateCustomImageTarget", false, 1)]
+    [MenuItem("AR.js/Image Target/1. Generate Image Target", false, 1)]
     static void OpenImageTargetGenerator()
     {
         Application.OpenURL("https://jeromeetienne.github.io/AR.js/three.js/examples/marker-training/examples/generator.html");

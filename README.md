@@ -6,7 +6,7 @@ Drop the main folder into the Assets folder within your Unity project, and make 
 
 ## Usage
 
-### There are two menu items for this. "AR.js/GenerateCustomImageTarget" and "AR.js/ChangeImageTarget". The first one will open up the website where you can go to generate both the image and the .patt file that you will need. The second one, should only be used after you already have an ImageTarget in scene. It will open another window where you will need to either put in the location of the .patt file or open a file selector with one of the buttons at the bottom and you will also need to drag and drop the target image you created. Then hit update. If you don't alter anything before hitting update, it will reset the target to the default hiro. 
+### There are two menu items for this. "AR.js/Image Target/1. Generate Image Target" and "AR.js/Image Target/2. Apply Generated Image". The first one will open up the website where you can go to generate both the image and the .patt file that you will need. The second one, should only be used after you already have an ImageTarget in scene. It will open another window where you will need drag and drop both the .patt file and the target image you created. Then hit update. If you don't alter anything before hitting update, it will reset the target to the default HIRO image target. 
 
 ### Adding Objects
 Right click the Hierarchy to add an image target, then right click the image target to add a shape.
@@ -25,7 +25,7 @@ You can move your object anywhere and record that as a point (change the FrameTi
 There is a loop option, and a click option that you can enable. If checked, the "Loop Animation" option will cause the animation to loop. The "On Click" option will make the animation trigger upon your click (though only when you finally compile to HTML, and not when you click play in the Unity Editor).
 
 ### Compiling to HTML
-Click the "AR.js" menu item, then click "Compile Files." This will create a file located in Assets>AR.js-master>aframe>UnityExamples>index.html
+Click the "AR.js" menu item, then click "Compile Files." This will create a file located in Assets>AR.js-master>aframe>{Active Scene Name}>index.html
 
 This is the final file and can be opened in a browser to view the AR experience using the default "Hiro" marker provided from Jerome's AR.js GitHub. If you open it in FireFox, you don't have to worry about running it on a localhost server for it to work properly.
 

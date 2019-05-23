@@ -2,6 +2,7 @@
 using System.IO;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class AnimationHelper : MonoBehaviour
 {
@@ -21,7 +22,7 @@ public class AnimationHelper : MonoBehaviour
     private void Start()
     {
         keyList = new KeyFrameList();
-        string filePath = Application.dataPath + "/Animations/JsonExports/" + gameObject.name + "_" + gameObject.transform.GetSiblingIndex() + ".txt";
+        string filePath = Application.dataPath + "/Animations/JsonExports/" + SceneManager.GetActiveScene().name + "/" + gameObject.name + "_" + gameObject.transform.GetSiblingIndex() + ".txt";
         if (File.Exists(filePath))
         {
             string textFile = File.ReadAllText(filePath);
@@ -106,7 +107,7 @@ public class AnimationHelper : MonoBehaviour
 
     public void ExportPoints()
     {
-        string filePath = Application.dataPath + "/Animations/JsonExports/";
+        string filePath = Application.dataPath + "/Animations/JsonExports/" + SceneManager.GetActiveScene().name + "/";
         if (!Directory.Exists(filePath)) Directory.CreateDirectory(filePath);
 
         string stringToWrite = JsonUtility.ToJson(keyList);

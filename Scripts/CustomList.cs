@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic; // Import the System.Collections.Generic class to give us access to List<>
 using System.IO;
 using UnityEditor;
+using UnityEngine.SceneManagement;
 
 public class CustomList : MonoBehaviour
 {
@@ -65,7 +66,7 @@ public class CustomList : MonoBehaviour
             keyList.frameList.Add(frame);
         }
 
-        string filePath = Application.dataPath + "/Animations/JsonExports/";
+        string filePath = Application.dataPath + "/Animations/JsonExports/" + SceneManager.GetActiveScene().name + "/";
         if (!Directory.Exists(filePath)) Directory.CreateDirectory(filePath);
 
         string stringToWrite = JsonUtility.ToJson(keyList);

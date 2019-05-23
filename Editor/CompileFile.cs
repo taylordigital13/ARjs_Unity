@@ -2,14 +2,26 @@
 using UnityEditor;
 using System.IO;
 using System.Text;
+using UnityEngine.SceneManagement;
 
 public class CompileFile : MonoBehaviour
 {
+    [MenuItem("AR.js/Compile Files", true)]
+    static bool CompileFileHTMLvalidation() 
+    {
+        if (GameObject.FindWithTag("ImageTarget") != null)
+        {
+            return true;
+        }
+        else return false;
+    }
+
+
     //Creates a menu item for building out the objects under the ImageTarget in scene as HTML code and saves said code to a file.
-    [MenuItem("AR.js/CompileFiles", false, 17)]
+    [MenuItem("AR.js/Compile Files", false, 17)]
     static void CompileFileHTML()
     {
-        string folderPath = Application.dataPath + "/AR.js-master/aframe/UnityExamples/";
+        string folderPath = GameObject.FindWithTag("ImageTarget").GetComponent<ImageTarget>().destination;
         if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
         string fileName = "index.html";
 
@@ -65,7 +77,7 @@ public class CompileFile : MonoBehaviour
 
             if(childToAdd.GetComponent<AnimationHelper>() != null)
             {
-                string animationFile = File.ReadAllText(Application.dataPath + "/Animations/JsonExports/" + id + ".txt");
+                string animationFile = File.ReadAllText(Application.dataPath + "/Animations/JsonExports/" + SceneManager.GetActiveScene().name + "/" + id + ".txt");
                 KeyFrameList keyList = JsonUtility.FromJson<KeyFrameList>(animationFile);
 
                 foreach (WeldonKeyFrame frame in keyList.frameList)
@@ -94,7 +106,7 @@ public class CompileFile : MonoBehaviour
 
             if (childToAdd.GetComponent<AnimationHelper>() != null)
             {
-                string animationFile = File.ReadAllText(Application.dataPath + "/Animations/JsonExports/" + id + ".txt");
+                string animationFile = File.ReadAllText(Application.dataPath + "/Animations/JsonExports/" + SceneManager.GetActiveScene().name + "/" + id + ".txt");
                 KeyFrameList keyList = JsonUtility.FromJson<KeyFrameList>(animationFile);
 
 
@@ -192,7 +204,7 @@ public class CompileFile : MonoBehaviour
                     //TODO: Add in consecutive keyframe animations with loopability
                     if (childToAdd.GetComponent<AnimationHelper>() != null)
                     {
-                        string animationFile = File.ReadAllText(Application.dataPath + "/Animations/JsonExports/" + planeID + ".txt");
+                        string animationFile = File.ReadAllText(Application.dataPath + "/Animations/JsonExports/" + SceneManager.GetActiveScene().name + "/" + planeID + ".txt");
                         KeyFrameList keyList = JsonUtility.FromJson<KeyFrameList>(animationFile);
 
                         foreach (WeldonKeyFrame frame in keyList.frameList)
@@ -246,7 +258,7 @@ public class CompileFile : MonoBehaviour
 
                     if (childToAdd.GetComponent<AnimationHelper>() != null)
                     {
-                        string animationFile = File.ReadAllText(Application.dataPath + "/Animations/JsonExports/" + cubeID + ".txt");
+                        string animationFile = File.ReadAllText(Application.dataPath + "/Animations/JsonExports/" + SceneManager.GetActiveScene().name + "/" + cubeID + ".txt");
                         KeyFrameList keyList = JsonUtility.FromJson<KeyFrameList>(animationFile);
 
                         foreach (WeldonKeyFrame frame in keyList.frameList)
@@ -302,7 +314,7 @@ public class CompileFile : MonoBehaviour
                     string shpereID = childToAdd.name + "_" + i;
                     if (childToAdd.GetComponent<AnimationHelper>() != null)
                     {
-                        string animationFile = File.ReadAllText(Application.dataPath + "/Animations/JsonExports/" + shpereID + ".txt");
+                        string animationFile = File.ReadAllText(Application.dataPath + "/Animations/JsonExports/" + SceneManager.GetActiveScene().name + "/" + shpereID + ".txt");
                         KeyFrameList keyList = JsonUtility.FromJson<KeyFrameList>(animationFile);
 
                         foreach (WeldonKeyFrame frame in keyList.frameList)
@@ -354,7 +366,7 @@ public class CompileFile : MonoBehaviour
                     string cylinderID = childToAdd.name + "_" + i;
                     if (childToAdd.GetComponent<AnimationHelper>() != null)
                     {
-                        string animationFile = File.ReadAllText(Application.dataPath + "/Animations/JsonExports/" + cylinderID + ".txt");
+                        string animationFile = File.ReadAllText(Application.dataPath + "/Animations/JsonExports/" + SceneManager.GetActiveScene().name + "/" + cylinderID + ".txt");
                         KeyFrameList keyList = JsonUtility.FromJson<KeyFrameList>(animationFile);
 
                         foreach (WeldonKeyFrame frame in keyList.frameList)
