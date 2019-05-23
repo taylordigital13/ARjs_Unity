@@ -1,8 +1,10 @@
 # Unity tool for AR.js
-This tool is in it's early stages, but is meant to help the user to build an AR.js project using Unity to help make the 3D object placement a breeze. This project is by no means complete, and currently only supports adding basic shapes to the scene, changing the shapes' colors or textures, simple linear animations, and the ability to click an object to trigger an animation or open a webpage.
+This tool is in it's early stages, but is meant to help the user to build an AR.js project using Unity to help make the 3D object placement a breeze. This project is by no means complete, and currently only supports changing the image target, adding basic shapes to the scene, changing the shapes' colors or textures, simple linear animations, and the ability to click an object to trigger an animation or open a webpage.
 
 ## Setup
 Drop the main folder into the Assets folder within your Unity project, and make sure the name is "ARjs_Unity". Currently, the name and placement of the folder is important, or else it won't work. After this has been added to your project, download the [AR.js project from GitHub](https://github.com/jeromeetienne/AR.js). Take the "AR.js-master" folder and drop that into the Assets folder as well. Again, name and placement of the folder matters.
+
+After that, you can get started. You can seperate the different ARjs projects your're working on by making different scenes. The project will compile to Assets>AR.js-master>aframe>{Active Scene Name}. This means if you have two different scenes in different folders, but with the same name, they will overwrite each other when compiling the ARjs project. It will also (likely) overwrite the animations on your game objects when you export animations if the scenes are the same name.
 
 ## Usage
 
