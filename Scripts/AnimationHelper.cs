@@ -36,6 +36,7 @@ public class AnimationHelper : MonoBehaviour
         oFrame = new WeldonKeyFrame(0, transform);
     }
 
+    //This runs on each object when you hit the play button. It mimics the same animation that will get excecuted when you run the HTML in a browser. 
     private void Update()
     {
         float currentTime = Time.time-startTime;
@@ -46,13 +47,6 @@ public class AnimationHelper : MonoBehaviour
         {
             WeldonKeyFrame frame = keyList.frameList[currentKeyFrameNumber];
             Debug.Log(gameObject.name);
-            Debug.Log("originalFramePosX: " + oFrame.posX);
-            Debug.Log("currentFramePosX: " + frame.posX);
-            Debug.Log("frameTime: " + frame.time);
-            Debug.Log("currentTime: " + currentTime);
-            Debug.Log("supposed to be: " + (oFrame.rotY + (-oFrame.rotY + frame.rotY) * percent));
-            Debug.Log("actually though: " + transform.localEulerAngles.y);
-            Debug.Log("currentFrameNumber: " + currentKeyFrameNumber);
             float timeToUse = frame.time;
             if (currentKeyFrameNumber>0) timeToUse = frame.time - keyList.frameList[currentKeyFrameNumber - 1].time;
 

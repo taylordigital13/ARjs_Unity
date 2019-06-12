@@ -21,6 +21,9 @@ You can right click in your assets to create a new material, and put a texture u
 ### Button Objects
 Select the object in question that you want to make into a button. Then click the "AR.js" menu item, and select "Make Button." You can then change the URL that the button links to in the inspector when the object is selected.
 
+### Videos
+Videos are very similar to Planes. You can add a video by right clicking the image target, selecting AR.js>Video. The Video object has a child also called "Video". The child called Video has a video player component. Drag and drop your video clip into the Video Players empty spot called "Video Clip". Select the parent Video in order to change the position, scale and rotation of the video. If you're changing the transform of the child, it won't export that information correctly.
+
 ### Animating Objects
 Select the object that you want to animate, click the "AR.js" menu item, and select "Make Animation." This will add two scripts to the object. The one you will need to use for adding keyframes to your animation is the Custom List script [(that I modified from this original post)](https://forum.unity.com/threads/display-a-list-class-with-a-custom-editor-script.227847/). 
 

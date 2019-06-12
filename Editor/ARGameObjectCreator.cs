@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEditor;
+using UnityEngine.Video;
 
 public class ARGameObjectCreator : MonoBehaviour
 {
@@ -101,6 +102,42 @@ public class ARGameObjectCreator : MonoBehaviour
         sceneCylinder.transform.tag = "Cylinder";
         sceneCylinder.name = "Cylinder";
     }
+
+    [MenuItem("GameObject/AR.js/Video", false, 14)]
+    static void PlaceVideoPrefabInScene()
+    {
+        GameObject video = AssetDatabase.LoadAssetAtPath(pathToUse + "Video.prefab", typeof(GameObject)) as GameObject;
+        GameObject sceneVideo;
+        if (Selection.activeGameObject != null)
+        {
+            sceneVideo = Instantiate(video, Vector3.zero, Quaternion.identity, Selection.activeGameObject.transform) as GameObject;
+        }
+        else
+        {
+            sceneVideo = Instantiate(video, Vector3.zero, Quaternion.identity);
+        }
+
+        Selection.activeObject = sceneVideo;
+        HelperFunctions.AddTag("Video");
+        sceneVideo.transform.tag = "Video";
+        sceneVideo.name = "Video";
+        //TODO: Create Dynamic video material and attach it to the video player
+        AssetDatabase.Refresh();
+    }
+
+    //[MenuItem("GameObject/AR.js/DebugInfo", false, 14)]
+    //static void DebugInfo()
+    //{
+    //    GameObject video = GameObject.FindWithTag("Video");
+    //    VideoPlayer player = video.GetComponentInChildren<VideoPlayer>();
+    //    Debug.Log(player.name);
+    //    Debug.Log(player.clip.name);
+    //    Debug.Log(player.clip.originalPath);
+    //    string location = player.clip.originalPath;
+    //    string[] splitName = location.Split('/');
+    //    string videoName = splitName[splitName.Length - 1];
+    //    Debug.Log(videoName);
+    //}
 
     [MenuItem("AR.js/Make Button", false, 4)]
     static void ConvertItemToButton()
