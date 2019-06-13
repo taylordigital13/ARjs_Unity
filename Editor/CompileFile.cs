@@ -41,7 +41,8 @@ public class CompileFile : MonoBehaviour
     <!-- <a-scene embedded arjs='sourceType: video; sourceUrl:../../data/videos/headtracking.mp4;'> -->
     <a-scene embedded arjs='sourceType: webcam'>
     <a-entity id=""mouseCursor"" cursor=""rayOrigin: mouse"" raycaster=""objects: .intersectable""></a-entity>";
-
+        bool hasVideo = false;
+        string buttonHTML = "<div style='position: fixed; top: 10px; width:100%; text-align: center; z-index: 1;'>\n      <button id=\"mutebutton\">\n          Unmute\n      </button>\n  </div>";
         string patternName = GameObject.FindWithTag("ImageTarget").GetComponent<ImageTarget>().patternName;
         string presetText = $"preset=\"hiro\"";
         if (patternName != "default") presetText = $"type=\"pattern\" preset=\"custom\" src=\"{patternName}\" url=\"{patternName}\" emitevents=\"true\" button";
@@ -75,8 +76,18 @@ public class CompileFile : MonoBehaviour
         sb.AppendLine("AFRAME.registerComponent('button', {");
         sb.AppendLine("init: function () {");
         sb.AppendLine($"var marker = document.querySelector(\"#marker\");");
-        //TODO: Add in consecutive keyframe animations with loopability
         for (int i = 0; i < imageTarget.childCount; i++)
+        {
+            GameObject childToAdd = imageTarget.GetChild(i).gameObject;
+            if (childToAdd.tag == "Video")
+            {
+
+                hasVideo = true;
+            }
+        }
+        if (hasVideo) sb.AppendLine($"var button = document.querySelector(\"#mutebutton\");");
+            //TODO: Add in consecutive keyframe animations with loopability
+            for (int i = 0; i < imageTarget.childCount; i++)
         {
             GameObject childToAdd = imageTarget.GetChild(i).gameObject;
             string id = childToAdd.name + "_" + i;
@@ -87,6 +98,7 @@ public class CompileFile : MonoBehaviour
 
             if (childToAdd.tag == "Video")
             {
+                hasVideo = true;
                 sb.AppendLine($"var {id} = document.querySelector(\"#{childToAdd.name + "_Asset_" + i}\");");
             }
 
@@ -123,13 +135,23 @@ public class CompileFile : MonoBehaviour
             {
                 string lineToAppend = "marker.addEventListener(\"markerFound\", function (evt) {\n       " +
                 	id + ".play();\n        " +
-                	id + ".muted = false;\n      " +
                 	"});\n      " +
                 	"marker.addEventListener(\"markerLost\", function (evt) {\n       " +
                 	id + ".pause();\n        " +
-                	id + ".muted = true;\n      " +
                 	"});";
+                string secondLine = "button.addEventListener(\"click\", function(evt){\n" +
+                	"console.log(\"button clicked\")\n" +
+                	"if(" + id + ".muted==true){\n" +
+                	"button.innerHTML=\"Mute\";\n" +
+                	id + ".muted=false;\n" +
+                	"}else{\n" +
+                	"button.innerHTML=\"Unmute\";\n" +
+                	id + ".muted=true;\n" +
+                	"}\n" +
+                	"});";
+
                 sb.AppendLine(lineToAppend);
+                sb.AppendLine(secondLine);
             }
 
             if (childToAdd.GetComponent<AnimationHelper>() != null)
@@ -196,7 +218,7 @@ public class CompileFile : MonoBehaviour
         sb.AppendLine("</script>");
         sb.AppendLine("<!-- END: Unity Compiled Events -->");
         sb.AppendLine("");
-
+        if (hasVideo) sb.AppendLine(buttonHTML);
         //MiddleHTML
         sb.AppendLine("<!-- BEGIN: Middle HTML -->");
         sb.AppendLine(middleHTML);
@@ -204,7 +226,7 @@ public class CompileFile : MonoBehaviour
         sb.AppendLine("");
 
 
-        //TODO: Add in Unity Compiled Assets
+
         sb.AppendLine("<!-- BEGIN: Unity Compiled Assets -->");
         sb.AppendLine("<a-assets>");
         for (int i = 0; i < imageTarget.childCount; i++)
@@ -220,7 +242,7 @@ public class CompileFile : MonoBehaviour
                 if(!Directory.Exists(folderPath + "videos/")) Directory.CreateDirectory(folderPath + "videos/");
                 if (File.Exists(destination)) File.Delete(destination);
                 File.Copy(location, destination);
-                sb.AppendLine($"<video id=\"{childToAdd.name + "_Asset_" + i}\" autoplay=\"false\" loop crossorigin=\"anonymous\" src=\"videos/{videoName}\"></video>");
+                sb.AppendLine($"<video id=\"{childToAdd.name + "_Asset_" + i}\" autoplay=\"false\" loop crossorigin=\"anonymous\" src=\"videos/{videoName}\" webkit-playsinline playsinline controls muted></video>");
             }
         }
         sb.AppendLine("</a-assets>");
