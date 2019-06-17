@@ -37,8 +37,8 @@ public class CompileFile : MonoBehaviour
 <script src=""https://rawgit.com/donmccurdy/aframe-extras/v3.13.1/dist/aframe-extras.loaders.min.js""></script>
 
 ";
-        string middleHTML = @"<body style='margin : 0px; overflow: hidden; font-family: Monospace;'>
-    <!-- <a-scene embedded arjs='sourceType: video; sourceUrl:../../data/videos/headtracking.mp4;'> -->
+        string bodyHtml = @"<body style='margin : 0px; overflow: hidden; font-family: Monospace;'>";
+        string middleHTML = @"<!-- <a-scene embedded arjs='sourceType: video; sourceUrl:../../data/videos/headtracking.mp4;'> -->
     <a-scene embedded arjs='sourceType: webcam'>
     <a-entity id=""mouseCursor"" cursor=""rayOrigin: mouse"" raycaster=""objects: .intersectable""></a-entity>";
         bool hasVideo = false;
@@ -218,9 +218,10 @@ public class CompileFile : MonoBehaviour
         sb.AppendLine("</script>");
         sb.AppendLine("<!-- END: Unity Compiled Events -->");
         sb.AppendLine("");
-        if (hasVideo) sb.AppendLine(buttonHTML);
         //MiddleHTML
         sb.AppendLine("<!-- BEGIN: Middle HTML -->");
+        sb.AppendLine(bodyHtml);
+        if (hasVideo) sb.AppendLine(buttonHTML);
         sb.AppendLine(middleHTML);
         sb.AppendLine("<!-- END: Middle HTML -->");
         sb.AppendLine("");
