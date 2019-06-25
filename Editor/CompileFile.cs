@@ -7,8 +7,8 @@ using UnityEngine.Video;
 
 public class CompileFile : MonoBehaviour
 {
-    [MenuItem("AR.js/Compile Files", true)]
-    static bool CompileFileHTMLvalidation() 
+    [MenuItem("AR.js/Compile Files/Final", true)]
+    static bool CompileFileHTMLFinalvalidation() 
     {
         if (GameObject.FindWithTag("ImageTarget") != null)
         {
@@ -17,34 +17,46 @@ public class CompileFile : MonoBehaviour
         else return false;
     }
 
+    [MenuItem("AR.js/Compile Files/Testing", true)]
+    static bool CompileFileHTMLTestingvalidation()
+    {
+        if (GameObject.FindWithTag("ImageTarget") != null)
+        {
+            return true;
+        }
+        else return false;
+    }
+
+    [MenuItem("AR.js/Compile Files/Final", false, 18)]
+    static void CompileFileHTMLFinal()
+    {
+        CompileFileHTML(false);
+    }
+
+    [MenuItem("AR.js/Compile Files/Testing", false, 17)]
+    static void CompileFileHTMLTesting()
+    {
+        CompileFileHTML(true);
+    }
 
     //Creates a menu item for building out the objects under the ImageTarget in scene as HTML code and saves said code to a file.
     [MenuItem("AR.js/Compile Files", false, 17)]
-    static void CompileFileHTML()
+    static void CompileFileHTML(bool testing)
     {
         string folderPath = GameObject.FindWithTag("ImageTarget").GetComponent<ImageTarget>().destination;
         if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
         string fileName = "index.html";
-
+        string aframeString = testing ? "<script src=\"../demos/vendor/aframe/build/aframe.min.js\"></script>" : "<script src=\"https://aframe.io/releases/0.8.0/aframe.min.js\"></script>";
         #region HTML
-        string topHTML = @"<!DOCTYPE html>
-<!-- include aframe -->
-<script src=""../demos/vendor/aframe/build/aframe.min.js""></script>
-<!-- include ar.js -->
-<script src=""../build/aframe-ar.js""></script>
-
-<!-- to load .ply model -->
-<script src=""https://rawgit.com/donmccurdy/aframe-extras/v3.13.1/dist/aframe-extras.loaders.min.js""></script>
-
-";
+        string topHTML = $"<!DOCTYPE html>\n<!-- include aframe -->\n{aframeString}\n<!-- include ar.js -->\n<script src=\"../build/aframe-ar.js\"></script>\n\n<!-- to load .ply model -->\n<script src=\"https://rawgit.com/donmccurdy/aframe-extras/v3.13.1/dist/aframe-extras.loaders.min.js\"></script>\n\n";
         string bodyHtml = @"<body style='margin : 0px; overflow: hidden; font-family: Monospace;'>";
-        string middleHTML = @"<!-- <a-scene embedded arjs='sourceType: video; sourceUrl:../../data/videos/headtracking.mp4;'> -->
-    <a-scene embedded arjs='sourceType: webcam'>
-    <a-entity id=""mouseCursor"" cursor=""rayOrigin: mouse"" raycaster=""objects: .intersectable""></a-entity>";
+        string middleHTML = @"<!-- <a-scene embedded arjs='debugUIEnabled: false; sourceType: video; sourceUrl:../../data/videos/headtracking.mp4;'> -->
+    <a-scene embedded arjs='debugUIEnabled: false; sourceType: webcam'>
+    <a-entity id=""mouseCursor"" cursor=""rayOrigin: mouse"" raycaster=""objects: .intersectable; useWorldCoordinates: true;""></a-entity>";
         bool hasVideo = false;
-        string buttonHTML = "<div style='position: fixed; top: 10px; width:100%; text-align: center; z-index: 1;'>\n      <button id=\"mutebutton\">\n          Unmute\n      </button>\n  </div>";
+        string buttonHTML = "<div style='position: absolute; bottom: 10px; right: 30px; width:100%; text-align: center; z-index: 1;'>\n      <button id=\"mutebutton\" style='position: absolute; bottom: 10px'>\n          Unmute\n      </button>\n  </div>";
         string patternName = GameObject.FindWithTag("ImageTarget").GetComponent<ImageTarget>().patternName;
-        string presetText = $"preset=\"hiro\"";
+        string presetText = $"preset=\"hiro\" emitevents=\"true\" button";
         if (patternName != "default") presetText = $"type=\"pattern\" preset=\"custom\" src=\"{patternName}\" url=\"{patternName}\" emitevents=\"true\" button";
         string markerHTML = "<a-marker id=\"marker\" " + presetText + ">";
 //        string bottomHTML = @"  <a-marker-camera " + presetText + @"></a-marker-camera>
@@ -126,7 +138,7 @@ public class CompileFile : MonoBehaviour
 
             if (childToAdd.GetComponent<ButtonHelper>() != null)
             {
-                sb.AppendLine(id + @".addEventListener(""click"", function(evt){");
+                sb.AppendLine(id + @".addEventListener(""mousedown"", function(evt){");
                 sb.AppendLine(@"open(""" + childToAdd.GetComponent<ButtonHelper>().URL + @""");");
                 sb.AppendLine("});");
             }
@@ -309,7 +321,7 @@ public class CompileFile : MonoBehaviour
                             }
                             else
                             {
-                                if (childToAdd.GetComponent<AnimationHelper>().onClick) animTrigger = $"begin= \"click\"";
+                                if (childToAdd.GetComponent<AnimationHelper>().onClick) animTrigger = $"begin= \"mousedown\"";
                             }
 
                             string posTo = $"to=\"{-frame.posX / 10} {frame.posY / 10} {frame.posZ / 10}\"",
@@ -362,7 +374,7 @@ public class CompileFile : MonoBehaviour
                             }
                             else
                             {
-                                if (childToAdd.GetComponent<AnimationHelper>().onClick) animTrigger = $"begin= \"click\"";
+                                if (childToAdd.GetComponent<AnimationHelper>().onClick) animTrigger = $"begin= \"mousedown\"";
                             }
 
                             string posTo = $"to=\"{-frame.posX / 10} {frame.posY / 10} {frame.posZ / 10}\"",
@@ -417,7 +429,7 @@ public class CompileFile : MonoBehaviour
                             }
                             else
                             {
-                                if(childToAdd.GetComponent<AnimationHelper>().onClick) animTrigger = $"begin= \"click\"";
+                                if(childToAdd.GetComponent<AnimationHelper>().onClick) animTrigger = $"begin= \"mousedown\"";
                             }
 
                             string posTo = $"to=\"{-frame.posX / 10} {frame.posY / 10} {frame.posZ / 10}\"", 
@@ -471,7 +483,7 @@ public class CompileFile : MonoBehaviour
                             }
                             else
                             {
-                                if (childToAdd.GetComponent<AnimationHelper>().onClick) animTrigger = $"begin= \"click\"";
+                                if (childToAdd.GetComponent<AnimationHelper>().onClick) animTrigger = $"begin= \"mousedown\"";
                             }
 
                             string posTo = $"to=\"{-frame.posX / 10} {frame.posY / 10} {frame.posZ / 10}\"",
@@ -524,7 +536,7 @@ public class CompileFile : MonoBehaviour
                             }
                             else
                             {
-                                if (childToAdd.GetComponent<AnimationHelper>().onClick) animTrigger = $"begin= \"click\"";
+                                if (childToAdd.GetComponent<AnimationHelper>().onClick) animTrigger = $"begin= \"mousedown\"";
                             }
 
                             string posTo = $"to=\"{-frame.posX / 10} {frame.posY / 10} {frame.posZ / 10}\"",
