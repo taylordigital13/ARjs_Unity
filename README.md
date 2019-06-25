@@ -32,9 +32,9 @@ You can move your object anywhere and record that as a point (change the FrameTi
 There is a loop option, and a click option that you can enable. If checked, the "Loop Animation" option will cause the animation to loop. The "On Click" option will make the animation trigger upon your click (though only when you finally compile to HTML, and not when you click play in the Unity Editor).
 
 ### Compiling to HTML
-Click the "AR.js" menu item, then click "Compile Files." This will create a file located in Assets>AR.js-master>aframe>{Active Scene Name}>index.html
+For Testing locally on your computer, click the "AR.js" menu item, then click "Compile Files>Testing" (this will prevent an error that causes textures not to render). For publishing to a website, click "CompileFiles>Final" (this will improve the clickablity of objects on mobile devices. Both of these options will create a file located in Assets>AR.js-master>aframe>{Active Scene Name}>index.html
 
-This is the final file and can be opened in a browser to view the AR experience using the default "Hiro" marker provided from Jerome's AR.js GitHub. If you open it in FireFox, you don't have to worry about running it on a localhost server for it to work properly.
+This is the final file and can be opened in a browser to view the AR experience using either the default "Hiro" marker provided from Jerome's AR.js GitHub, or the custom marker that you've created and applied yourself. If you open it in FireFox, you don't have to worry about running it on a localhost server for it to work properly.
 
 ## How it Works
 The CompileFile.cs script is where the majority of the work happens. It's just a lot of loops and conditional statements that goes through ever object attached to the ImageTarget in scene, and adds HTML text to a StringBuilder accordingly then saves the giant string as a file called index.html
