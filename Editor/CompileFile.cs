@@ -46,14 +46,15 @@ public class CompileFile : MonoBehaviour
         string folderPath = GameObject.FindWithTag("ImageTarget").GetComponent<ImageTarget>().destination;
         if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
         string fileName = "index.html";
-        string aframeString = testing ? "<script src=\"../demos/vendor/aframe/build/aframe.min.js\"></script>" : "<script src=\"https://aframe.io/releases/0.8.0/aframe.min.js\"></script>";
+        bool hasVideo = false;
+
         #region HTML
+        string aframeString = testing ? "<script src=\"../demos/vendor/aframe/build/aframe.min.js\"></script>" : "<script src=\"https://aframe.io/releases/0.8.0/aframe.min.js\"></script>";
         string topHTML = $"<!DOCTYPE html>\n<!-- include aframe -->\n{aframeString}\n<!-- include ar.js -->\n<script src=\"../build/aframe-ar.js\"></script>\n\n<!-- to load .ply model -->\n<script src=\"https://rawgit.com/donmccurdy/aframe-extras/v3.13.1/dist/aframe-extras.loaders.min.js\"></script>\n\n";
         string bodyHtml = @"<body style='margin : 0px; overflow: hidden; font-family: Monospace;'>";
         string middleHTML = @"<!-- <a-scene embedded arjs='debugUIEnabled: false; sourceType: video; sourceUrl:../../data/videos/headtracking.mp4;'> -->
     <a-scene embedded arjs='debugUIEnabled: false; sourceType: webcam'>
     <a-entity id=""mouseCursor"" cursor=""rayOrigin: mouse"" raycaster=""objects: .intersectable; useWorldCoordinates: true;""></a-entity>";
-        bool hasVideo = false;
         string buttonHTML = "<div style='position: absolute; bottom: 10px; right: 30px; width:100%; text-align: center; z-index: 1;'>\n      <button id=\"mutebutton\" style='position: absolute; bottom: 10px'>\n          Unmute\n      </button>\n  </div>";
         string patternName = GameObject.FindWithTag("ImageTarget").GetComponent<ImageTarget>().patternName;
         string presetText = $"preset=\"hiro\" emitevents=\"true\" button";
@@ -71,9 +72,11 @@ public class CompileFile : MonoBehaviour
         #endregion
 
         StringBuilder sb = new StringBuilder();
+        #region Top HTML
         sb.AppendLine("<!-- BEGIN: Top HTML -->");
         sb.Append(topHTML);
         sb.AppendLine("<!-- END: Top HTML -->");
+        #endregion Top HTML
 
         Transform imageTarget = GameObject.FindGameObjectWithTag("ImageTarget").transform;
         if(imageTarget == null)
@@ -82,6 +85,7 @@ public class CompileFile : MonoBehaviour
             return;
         }
 
+        #region Unity Compiled Events
         //Adds in the actions of the children to javascript.
         sb.AppendLine("<!-- BEGIN: Unity Compiled Events -->");
         sb.AppendLine("<script>");
@@ -98,7 +102,6 @@ public class CompileFile : MonoBehaviour
             }
         }
         if (hasVideo) sb.AppendLine($"var button = document.querySelector(\"#mutebutton\");");
-            //TODO: Add in consecutive keyframe animations with loopability
             for (int i = 0; i < imageTarget.childCount; i++)
         {
             GameObject childToAdd = imageTarget.GetChild(i).gameObject;
@@ -174,7 +177,6 @@ public class CompileFile : MonoBehaviour
 
                 foreach (WeldonKeyFrame frame in keyList.frameList)
                 {
-                    //TODO: Add in exceptions for the last frame and if the animation is set to repeat.
                     int index = keyList.frameList.FindIndex((obj) => obj == frame);
                     if (index != 0)
                     {
@@ -230,6 +232,8 @@ public class CompileFile : MonoBehaviour
         sb.AppendLine("</script>");
         sb.AppendLine("<!-- END: Unity Compiled Events -->");
         sb.AppendLine("");
+        #endregion Unity Compiled Events
+
         //MiddleHTML
         sb.AppendLine("<!-- BEGIN: Middle HTML -->");
         sb.AppendLine(bodyHtml);
@@ -238,8 +242,7 @@ public class CompileFile : MonoBehaviour
         sb.AppendLine("<!-- END: Middle HTML -->");
         sb.AppendLine("");
 
-
-
+        #region Unity Compiled Assets
         sb.AppendLine("<!-- BEGIN: Unity Compiled Assets -->");
         sb.AppendLine("<a-assets>");
         for (int i = 0; i < imageTarget.childCount; i++)
@@ -257,16 +260,39 @@ public class CompileFile : MonoBehaviour
                 File.Copy(location, destination);
                 sb.AppendLine($"<video id=\"{childToAdd.name + "_Asset_" + i}\" autoplay=\"false\" loop crossorigin=\"anonymous\" src=\"videos/{videoName}\" webkit-playsinline playsinline controls muted></video>");
             }
+
+            if(childToAdd.tag == "Model")
+            {
+                if (!Directory.Exists(folderPath + "models/")) Directory.CreateDirectory(folderPath + "models/");
+                CustomModelHelper modelHelper = childToAdd.GetComponent<CustomModelHelper>();
+                if (File.Exists(folderPath + "models/" + modelHelper.objName))
+                {
+                    sb.AppendLine($"<a-asset-item id=\"{childToAdd.name + "_Asset_obj_" + i}\" src=\"models/{modelHelper.objName}\"></a-asset-item>");
+                }
+                else
+                {
+                    Debug.LogError($"The model file {modelHelper.objName} doesn't seem to exist in the proper location.");
+                }
+                if (File.Exists(folderPath + "models/" + modelHelper.mtlName))
+                {
+                    sb.AppendLine($"<a-asset-item id=\"{childToAdd.name + "_Asset_mtl_" + i}\" src=\"models/{modelHelper.mtlName}\"></a-asset-item>");
+                }
+                else
+                {
+                    Debug.LogWarning("The object doesn't have a material.");
+                }
+            }
         }
         sb.AppendLine("</a-assets>");
         sb.AppendLine("<!-- END: Unity Compiled Assets -->");
-
+        #endregion Unity Compiled Assets
 
         sb.AppendLine("<!-- BEGIN: Add Image Target (marker) -->");
         sb.AppendLine(markerHTML);
         sb.AppendLine("<!-- END: Add Image Target (marker) -->");
         sb.AppendLine("");
 
+        #region Unity Compiled Objects
         sb.AppendLine("<!-- BEGIN: Unity Compiled Objects -->");
         //Adds in the physical object for each child of the ImageTarget
         for (int i = 0; i < imageTarget.childCount; i++)
@@ -275,7 +301,7 @@ public class CompileFile : MonoBehaviour
             Texture2D objectTexture = (Texture2D)childToAdd.GetComponentInChildren<MeshRenderer>().sharedMaterial.mainTexture;
             string textureName = null;
             bool transparency = false;
-            if (objectTexture != null)
+            if (objectTexture != null && childToAdd.tag!="Model")
             {
                 textureName = objectTexture.name;
                 byte[] bytes = objectTexture.EncodeToPNG();
@@ -284,7 +310,6 @@ public class CompileFile : MonoBehaviour
                 transparency = true;
 
             }
-            //TODO: Add in animation capability for color as well
             switch (childToAdd.tag)
             {
                 case "Plane":
@@ -296,7 +321,6 @@ public class CompileFile : MonoBehaviour
                     sb.AppendLine($"<a-plane src=\"{Plane.src}\" id=\"{childToAdd.name + "_" + i}\" class=\"intersectable\" width=\"{Plane.width}\" height=\"{Plane.height}\" position=\"{Plane.position}\" rotation=\"{Plane.rotation}\" color=\"{Plane.color}\" transparent={transparency}>");
 
                     string planeID = childToAdd.name + "_" + i;
-                    //TODO: Add in consecutive keyframe animations with loopability
                     if (childToAdd.GetComponent<AnimationHelper>() != null)
                     {
                         string animationFile = File.ReadAllText(Application.dataPath + "/Animations/JsonExports/" + SceneManager.GetActiveScene().name + "/" + planeID + ".txt");
@@ -451,6 +475,58 @@ public class CompileFile : MonoBehaviour
                     sb.AppendLine("</a-box>");
                     break;
 
+                case "Model":
+                    string modelID = childToAdd.name + "_" + i;
+
+                    var Model = (width: childToAdd.transform.localScale.x / 10, height: childToAdd.transform.localScale.y / 10, depth: childToAdd.transform.localScale.z / 10,
+                                position: -childToAdd.transform.localPosition.x / 10 + " " + childToAdd.transform.localPosition.y / 10 + " " + childToAdd.transform.localPosition.z / 10,
+                                rotation: childToAdd.transform.localEulerAngles.x + " " + -childToAdd.transform.localEulerAngles.y + " " + -childToAdd.transform.localEulerAngles.z,
+                                color: "#ffffff",
+                                src: textureName != null ? "textures/" + textureName + ".png" : "");
+                    sb.AppendLine($"<a-entity obj-model=\"obj: #{childToAdd.name + "_Asset_obj_" + i}; mtl: #{childToAdd.name + "_Asset_mtl_" + i}\" id=\"{childToAdd.name + "_" + i}\" class=\"intersectable\" scale=\"{Model.width} {Model.height} {Model.depth}\" position=\"{Model.position}\" rotation=\"{Model.rotation}\" color=\"{Model.color}\" transparent={transparency}>");
+
+
+                    if (childToAdd.GetComponent<AnimationHelper>() != null)
+                    {
+                        string animationFile = File.ReadAllText(Application.dataPath + "/Animations/JsonExports/" + SceneManager.GetActiveScene().name + "/" + modelID + ".txt");
+                        KeyFrameList keyList = JsonUtility.FromJson<KeyFrameList>(animationFile);
+
+                        foreach (WeldonKeyFrame frame in keyList.frameList)
+                        {
+                            int index = keyList.frameList.FindIndex(obj => obj == frame);
+                            string loopTrueString = "";
+                            string animTrigger = "";
+                            string posFrom = "", rotFrom = "", scaleFrom = "";
+                            WeldonKeyFrame prevFrame = new WeldonKeyFrame();
+                            if (index > 0)
+                            {
+                                prevFrame = keyList.frameList[index - 1];
+                                posFrom = $"from=\"{-prevFrame.posX / 10} {prevFrame.posY / 10} {prevFrame.posZ / 10}\"";
+                                rotFrom = $"from=\"{prevFrame.rotX} {-prevFrame.rotY} {-prevFrame.rotZ}\"";
+                                scaleFrom = $"from=\"{prevFrame.scalX / 10} {prevFrame.scalY / 10} {prevFrame.scalZ / 10}\"";
+
+                                animTrigger = $"begin= \"{modelID}_F{index}\"";
+                            }
+                            else
+                            {
+                                if (childToAdd.GetComponent<AnimationHelper>().onClick) animTrigger = $"begin= \"mousedown\"";
+                            }
+
+                            string posTo = $"to=\"{-frame.posX / 10} {frame.posY / 10} {frame.posZ / 10}\"",
+                                rotTo = $"to=\"{frame.rotX} {-frame.rotY} {-frame.rotZ}\"",
+                                scaleTo = $"to=\"{frame.scalX / 10} {frame.scalY / 10} {frame.scalZ / 10}\"";
+
+                            //if (childToAdd.GetComponent<AnimationHelper>().loop) loopTrueString = $"repeat = \"indefinite\"";
+                            bool isFirstFrame = prevFrame.time.Equals(-1) ? true : false;
+                            if (isFirstFrame) prevFrame.time = 0;
+                            if (frame.IsDifferentPosition(prevFrame) || isFirstFrame) sb.AppendLine($"<a-animation id=\"{modelID}_F{index}\" attribute=\"position\" {posFrom} {posTo} dur=\"{(frame.time - prevFrame.time) * 1000}\" easing='linear' {animTrigger}></a-animation>");
+                            if (frame.IsDifferentRotation(prevFrame) || isFirstFrame) sb.AppendLine($"<a-animation id=\"{modelID}_F{index}\" attribute=\"rotation\" {rotFrom} {rotTo} dur=\"{(frame.time - prevFrame.time) * 1000}\" easing='linear' {animTrigger}></a-animation>");
+                            if (frame.IsDifferentWidth(prevFrame) || isFirstFrame) sb.AppendLine($"<a-animation id=\"{modelID}_F{index}\" attribute=\"scale\" {scaleFrom} {scaleTo} dur=\"{(frame.time - prevFrame.time) * 1000}\" easing='linear' {animTrigger}></a-animation>");
+                        }
+                    }
+                    sb.AppendLine("</a-entity>");
+                    break;
+
                 case "Sphere":
                     var Sphere = (radius: childToAdd.transform.localScale.x / 20,
                                 position: -childToAdd.transform.localPosition.x / 10 + " " + childToAdd.transform.localPosition.y / 10 + " " + childToAdd.transform.localPosition.z / 10,
@@ -502,7 +578,6 @@ public class CompileFile : MonoBehaviour
 
                     break;
 
-                //TODO: Add animation stuff to Cylinder once you've finished animation stuff for the other shape types.
                 case "Cylinder":
                     var Cylinder = (radius: (childToAdd.transform.localScale.x + childToAdd.transform.localScale.z) / 40, height: childToAdd.transform.localScale.y / 5,
                                 position: -childToAdd.transform.localPosition.x / 10 + " " + childToAdd.transform.localPosition.y / 10 + " " + childToAdd.transform.localPosition.z / 10,
@@ -563,6 +638,8 @@ public class CompileFile : MonoBehaviour
         }
 
         sb.AppendLine("<!-- END: Unity Compiled Objects -->");
+        #endregion Unity Compiled Objects
+
         sb.AppendLine("");
         sb.AppendLine("<!-- BEGIN: Bottome HTML -->");
         sb.Append(bottomHTML);

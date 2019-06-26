@@ -12,11 +12,14 @@ After that, you can get started. You can seperate the different ARjs projects yo
 ### Changing the Image Target
 There are two menu items for this. "AR.js/Image Target/1. Generate Image Target" and "AR.js/Image Target/2. Apply Generated Image". The first one will open up the website where you can go to generate both the image and the .patt file that you will need. The second one, should only be used after you already have an ImageTarget in scene. It will open another window where you will need drag and drop both the .patt file and the target image you created. Then hit update. If you don't alter anything before hitting update, it will reset the target to the default HIRO image target. 
 
-### Adding Objects
+### Adding Normal Objects
 Right click the Hierarchy to add an image target, then right click the image target to add a shape.
 
-### Texturing Objects
+### Texturing Normal Objects
 You can right click in your assets folder to create a new material, with the new material selected, drag and drop an image under the material's "albedo" option, or simply change the color of the material. Then you can drag and drop this material onto your object.
+
+### Adding Custom Model Objects
+If you right click the image target, you can add a custom model to the scene. Custom models require .mtl files to be textured. And sometimes .mtl files require textures in order to work. After clicking on "AR.js>Custom Model" a window will appear. Drag and drop the .obj, .mtl, and texture file into the appropriate places in the window. Then click the button and the files will both get copied from wherever it was to the aframe/{scene name}/models folder and appear in the scene that you're working in.
 
 ### Button Objects
 Select the object in question that you want to make into a button. Then click the "AR.js" menu item, and select "Make Button." You can then change the URL that the button links to in the inspector when the object is selected. NOTE: buttons don't work the best on mobile for some reason. You kinda need to tap the object many time in quick succession, but on the computer using the mouse it always gets it on just one click.

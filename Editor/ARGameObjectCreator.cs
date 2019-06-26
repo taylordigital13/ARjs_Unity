@@ -151,7 +151,7 @@ public class ARGameObjectCreator : MonoBehaviour
     {
         GameObject obj = Selection.activeGameObject;
         if (obj == null) return false;
-        if((obj.CompareTag("Cube") || obj.CompareTag("Plane") || obj.CompareTag("Sphere") || obj.CompareTag("Cylinder")) && obj.GetComponent<ButtonHelper>()==null)
+        if((obj.CompareTag("Cube") || obj.CompareTag("Plane") || obj.CompareTag("Sphere") || obj.CompareTag("Cylinder") || obj.CompareTag("Model")) && obj.GetComponent<ButtonHelper>()==null)
         {
             return true;
         }
@@ -174,7 +174,7 @@ public class ARGameObjectCreator : MonoBehaviour
     {
         GameObject obj = Selection.activeGameObject;
         if (obj == null) return false;
-        if ((obj.CompareTag("Cube") || obj.CompareTag("Plane") || obj.CompareTag("Sphere") || obj.CompareTag("Cylinder")) && obj.GetComponent<AnimationHelper>() == null)
+        if ((obj.CompareTag("Cube") || obj.CompareTag("Plane") || obj.CompareTag("Sphere") || obj.CompareTag("Cylinder") || obj.CompareTag("Model")) && obj.GetComponent<AnimationHelper>() == null)
         {
             return true;
         }
