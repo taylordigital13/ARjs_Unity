@@ -7,8 +7,8 @@ using UnityEngine.Video;
 
 public class CompileFile : MonoBehaviour
 {
-    [MenuItem("AR.js/Compile Files/Final", true)]
-    static bool CompileFileHTMLFinalvalidation() 
+    [MenuItem("AR.js/Compile Files", true)]
+    static bool CompileFileHTMLingvalidation()
     {
         if (GameObject.FindWithTag("ImageTarget") != null)
         {
@@ -17,45 +17,30 @@ public class CompileFile : MonoBehaviour
         else return false;
     }
 
-    [MenuItem("AR.js/Compile Files/Testing", true)]
-    static bool CompileFileHTMLTestingvalidation()
-    {
-        if (GameObject.FindWithTag("ImageTarget") != null)
-        {
-            return true;
-        }
-        else return false;
-    }
-
-    [MenuItem("AR.js/Compile Files/Final", false, 18)]
-    static void CompileFileHTMLFinal()
-    {
-        CompileFileHTML(false);
-    }
-
-    [MenuItem("AR.js/Compile Files/Testing", false, 17)]
-    static void CompileFileHTMLTesting()
-    {
-        CompileFileHTML(true);
-    }
 
     //Creates a menu item for building out the objects under the ImageTarget in scene as HTML code and saves said code to a file.
     [MenuItem("AR.js/Compile Files", false, 17)]
-    static void CompileFileHTML(bool testing)
+    static void CompileFileHTML()
     {
         string folderPath = GameObject.FindWithTag("ImageTarget").GetComponent<ImageTarget>().destination;
         if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
+        if (!File.Exists("Assets/AR.js-master/aframe/fullscreen.png"))
+        {
+            File.Copy("Assets/ARjs_Unity/Icons/fullscreen.png", "Assets/AR.js-master/aframe/fullscreen.png");
+        }
         string fileName = "index.html";
         bool hasVideo = false;
 
-        #region HTML
-        string aframeString = testing ? "<script src=\"../demos/vendor/aframe/build/aframe.min.js\"></script>" : "<script src=\"https://aframe.io/releases/0.8.0/aframe.min.js\"></script>";
-        string topHTML = $"<!DOCTYPE html>\n<!-- include aframe -->\n{aframeString}\n<!-- include ar.js -->\n<script src=\"../build/aframe-ar.js\"></script>\n\n<!-- to load .ply model -->\n<script src=\"https://rawgit.com/donmccurdy/aframe-extras/v3.13.1/dist/aframe-extras.loaders.min.js\"></script>\n\n";
+        #region HTML Strings
+        string aframeString = "<script src=\"https://aframe.io/releases/0.9.2/aframe.min.js\"></script>";
+        string topHTML = $"<!DOCTYPE html>\n<!-- include aframe -->\n{aframeString}\n<!-- include ar.js -->\n<script src=\"https://cdn.rawgit.com/jeromeetienne/AR.js/1.7.2/aframe/build/aframe-ar.js\"></script>\n\n<!-- to load .ply model -->\n<script src=\"https://rawgit.com/donmccurdy/aframe-extras/v3.13.1/dist/aframe-extras.loaders.min.js\"></script>\n\n";
         string bodyHtml = @"<body style='margin : 0px; overflow: hidden; font-family: Monospace;'>";
         string middleHTML = @"<!-- <a-scene embedded arjs='debugUIEnabled: false; sourceType: video; sourceUrl:../../data/videos/headtracking.mp4;'> -->
-    <a-scene embedded arjs='debugUIEnabled: false; sourceType: webcam'>
+    <a-scene embedded arjs='debugUIEnabled: false; sourceType: webcam' vr-mode-ui='enabled: false'>
     <a-entity id=""mouseCursor"" cursor=""rayOrigin: mouse"" raycaster=""objects: .intersectable; useWorldCoordinates: true;""></a-entity>";
         string buttonHTML = "<div style='position: absolute; bottom: 10px; right: 30px; width:100%; text-align: center; z-index: 1;'>\n      <button id=\"mutebutton\" style='position: absolute; bottom: 10px'>\n          Unmute\n      </button>\n  </div>";
+        string fullscreenButtonHTML = "<div style='position: absolute; bottom: 5px; left: 30px; width:100%; text-align: right; z-index: 1;'>\n        <input type=\"image\" id=\"fullscreen\" src=\"../fullscreen.png\" style='position: absolute; bottom: 0px; right: 35px;'>\n        </input>\n    </div>";
+        string fullscreenButtonActionHTML = "fullbutton.addEventListener(\"click\", function (evt) {\n                if (elem.requestFullscreen) {\n                    elem.requestFullscreen();\n                } else if (elem.mozRequestFullScreen) {\n                    /* Firefox */\n                    elem.mozRequestFullScreen();\n                } else if (elem.webkitRequestFullscreen) {\n                    /* Chrome, Safari and Opera */\n                    elem.webkitRequestFullscreen();\n                } else if (elem.msRequestFullscreen) {\n                    /* IE/Edge */\n                    elem.msRequestFullscreen();\n                }\n            });";
         string patternName = GameObject.FindWithTag("ImageTarget").GetComponent<ImageTarget>().patternName;
         string presetText = $"preset=\"hiro\" emitevents=\"true\" button";
         if (patternName != "default") presetText = $"type=\"pattern\" preset=\"custom\" src=\"{patternName}\" url=\"{patternName}\" emitevents=\"true\" button";
@@ -91,7 +76,9 @@ public class CompileFile : MonoBehaviour
         sb.AppendLine("<script>");
         sb.AppendLine("AFRAME.registerComponent('button', {");
         sb.AppendLine("init: function () {");
+        sb.AppendLine($"var elem = document.documentElement;");
         sb.AppendLine($"var marker = document.querySelector(\"#marker\");");
+        sb.AppendLine($"var fullbutton = document.querySelector(\"#fullscreen\");");
         for (int i = 0; i < imageTarget.childCount; i++)
         {
             GameObject childToAdd = imageTarget.GetChild(i).gameObject;
@@ -116,22 +103,6 @@ public class CompileFile : MonoBehaviour
                 hasVideo = true;
                 sb.AppendLine($"var {id} = document.querySelector(\"#{childToAdd.name + "_Asset_" + i}\");");
             }
-
-            if (childToAdd.GetComponent<AnimationHelper>() != null)
-            {
-                string animationFile = File.ReadAllText(Application.dataPath + "/Animations/JsonExports/" + SceneManager.GetActiveScene().name + "/" + id + ".txt");
-                KeyFrameList keyList = JsonUtility.FromJson<KeyFrameList>(animationFile);
-
-                foreach (WeldonKeyFrame frame in keyList.frameList)
-                {
-                    int index = keyList.frameList.FindIndex((obj) => obj == frame);
-                    WeldonKeyFrame prevFrame = new WeldonKeyFrame();
-                    if (index != 0) prevFrame = keyList.frameList[index - 1];
-
-                    string name = $"{id}_F{index}";
-                    sb.AppendLine($"var {name} = document.querySelector(\"#{name}\");");
-                }
-            }
         }
 
         for (int i = 0; i < imageTarget.childCount; i++)
@@ -148,12 +119,13 @@ public class CompileFile : MonoBehaviour
 
             if (childToAdd.tag == "Video")
             {
-                string lineToAppend = "marker.addEventListener(\"markerFound\", function (evt) {\n       " +
-                	id + ".play();\n        " +
-                	"});\n      " +
-                	"marker.addEventListener(\"markerLost\", function (evt) {\n       " +
-                	id + ".pause();\n        " +
+                string lineToAppend = "marker.addEventListener(\"markerFound\", function (evt) {\n" +
+                	id + ".play();\n" +
+                	"});\n" +
+                	"marker.addEventListener(\"markerLost\", function (evt) {\n" +
+                	id + ".pause();\n" +
                 	"});";
+                
                 string secondLine = "button.addEventListener(\"click\", function(evt){\n" +
                 	"console.log(\"button clicked\")\n" +
                 	"if(" + id + ".muted==true){\n" +
@@ -165,68 +137,13 @@ public class CompileFile : MonoBehaviour
                 	"}\n" +
                 	"});";
 
+
                 sb.AppendLine(lineToAppend);
                 sb.AppendLine(secondLine);
             }
-
-            if (childToAdd.GetComponent<AnimationHelper>() != null)
-            {
-                string animationFile = File.ReadAllText(Application.dataPath + "/Animations/JsonExports/" + SceneManager.GetActiveScene().name + "/" + id + ".txt");
-                KeyFrameList keyList = JsonUtility.FromJson<KeyFrameList>(animationFile);
-
-
-                foreach (WeldonKeyFrame frame in keyList.frameList)
-                {
-                    int index = keyList.frameList.FindIndex((obj) => obj == frame);
-                    if (index != 0)
-                    {
-
-                        WeldonKeyFrame prevFrame = keyList.frameList[index - 1];
-
-                        if (index < keyList.frameList.Count - 1)
-                        {
-                            string nameListener = $"{id}_F{index - 1}";
-                            string nameNext = $"{id}_F{index}";
-
-                            sb.AppendLine(nameListener + @".addEventListener(""animationend"", function(evt){");
-                            sb.AppendLine(nameNext + $".emit(\"{nameNext}\")");
-                            sb.AppendLine("});");
-                        }
-                        else if (childToAdd.GetComponent<AnimationHelper>().loop)
-                        {
-
-                            string nameListener = $"{id}_F{index - 1}";
-                            string nameNext = $"{id}_F{index}";
-
-                            sb.AppendLine(nameListener + @".addEventListener(""animationend"", function(evt){");
-                            sb.AppendLine(nameNext + $".emit(\"{nameNext}\")");
-                            sb.AppendLine("});");
-
-
-                            nameListener = $"{id}_F{index}";
-                            nameNext = $"{id}_F{1}";
-
-                            sb.AppendLine(nameListener + @".addEventListener(""animationend"", function(evt){");
-                            sb.AppendLine(nameNext + $".emit(\"{nameNext}\")");
-                            sb.AppendLine("});");
-                        }
-                        else
-                        {
-                            string nameListener = $"{id}_F{index - 1}";
-                            string nameNext = $"{id}_F{index}";
-
-                            sb.AppendLine(nameListener + @".addEventListener(""animationend"", function(evt){");
-                            sb.AppendLine(nameNext + $".emit(\"{nameNext}\")");
-                            sb.AppendLine("});");
-                        }
-                    }
-
-                }
-
-
-            }
         }
 
+        sb.AppendLine(fullscreenButtonActionHTML);
         sb.AppendLine("}");
         sb.AppendLine("});");
         sb.AppendLine("</script>");
@@ -238,6 +155,7 @@ public class CompileFile : MonoBehaviour
         sb.AppendLine("<!-- BEGIN: Middle HTML -->");
         sb.AppendLine(bodyHtml);
         if (hasVideo) sb.AppendLine(buttonHTML);
+        sb.AppendLine(fullscreenButtonHTML);
         sb.AppendLine(middleHTML);
         sb.AppendLine("<!-- END: Middle HTML -->");
         sb.AppendLine("");
@@ -318,9 +236,9 @@ public class CompileFile : MonoBehaviour
                                 rotation: childToAdd.transform.localEulerAngles.x + " " + -childToAdd.transform.localEulerAngles.y + " " + -childToAdd.transform.localEulerAngles.z,
                                 color: "#" + ColorUtility.ToHtmlStringRGB(childToAdd.GetComponentInChildren<MeshRenderer>().sharedMaterial.color),
                                 src: textureName != null ? "textures/" + textureName + ".png" : "");
-                    sb.AppendLine($"<a-plane src=\"{Plane.src}\" id=\"{childToAdd.name + "_" + i}\" class=\"intersectable\" width=\"{Plane.width}\" height=\"{Plane.height}\" position=\"{Plane.position}\" rotation=\"{Plane.rotation}\" color=\"{Plane.color}\" transparent={transparency}>");
+                    sb.AppendLine($"<a-plane src=\"{Plane.src}\" id=\"{childToAdd.name + "_" + i}\" class=\"intersectable\" width=\"{Plane.width}\" height=\"{Plane.height}\" position=\"{Plane.position}\" rotation=\"{Plane.rotation}\" color=\"{Plane.color}\" transparent={transparency}");
 
-                    string planeID = childToAdd.name + "_" + i;
+                    string planeID = childToAdd.name.ToLower() + "_" + i;
                     if (childToAdd.GetComponent<AnimationHelper>() != null)
                     {
                         string animationFile = File.ReadAllText(Application.dataPath + "/Animations/JsonExports/" + SceneManager.GetActiveScene().name + "/" + planeID + ".txt");
@@ -336,43 +254,43 @@ public class CompileFile : MonoBehaviour
                             if (index > 0)
                             {
                                 prevFrame = keyList.frameList[index - 1];
-                                posFrom = $"from=\"{-prevFrame.posX / 10} {prevFrame.posY / 10} {prevFrame.posZ / 10}\"";
-                                rotFrom = $"from=\"{prevFrame.rotX} {-prevFrame.rotY} {-prevFrame.rotZ}\"";
-                                widthFrom = $"from=\"{prevFrame.scalX}\"";
-                                heightFrom = $"from=\"{prevFrame.scalY}\"";
+                                posFrom = $"from: {-prevFrame.posX / 10} {prevFrame.posY / 10} {prevFrame.posZ / 10};";
+                                rotFrom = $"from: {prevFrame.rotX} {-prevFrame.rotY} {-prevFrame.rotZ};";
+                                widthFrom = $"from: {prevFrame.scalX};";
+                                heightFrom = $"from: {prevFrame.scalY};";
 
-                                animTrigger = $"begin= \"{planeID}_F{index}\"";
+                                animTrigger = $"startEvents: animationcomplete__{planeID}_f{index-1}" + ((index==1 && childToAdd.GetComponent<AnimationHelper>().loop)? $", animationcomplete__{planeID}_f{keyList.frameList.Count-1};" : ";");
                             }
                             else
                             {
-                                if (childToAdd.GetComponent<AnimationHelper>().onClick) animTrigger = $"begin= \"mousedown\"";
+                                if (childToAdd.GetComponent<AnimationHelper>().onClick) animTrigger = $"startEvents: mousedown;";
                             }
 
-                            string posTo = $"to=\"{-frame.posX / 10} {frame.posY / 10} {frame.posZ / 10}\"",
-                                rotTo = $"to=\"{frame.rotX} {-frame.rotY} {-frame.rotZ}\"",
-                                widthTo = $"to=\"{frame.scalX}\"",
-                                heightTo = $"to=\"{frame.scalY}\"";
+                            string posTo = $"to: {-frame.posX / 10} {frame.posY / 10} {frame.posZ / 10};",
+                                rotTo = $"to: {frame.rotX} {-frame.rotY} {-frame.rotZ};",
+                                widthTo = $"to: {frame.scalX};",
+                                heightTo = $"to: {frame.scalY};";
 
                             //if (childToAdd.GetComponent<AnimationHelper>().loop) loopTrueString = $"repeat = \"indefinite\"";
                             bool isFirstFrame = prevFrame.time.Equals(-1) ? true : false;
                             if (isFirstFrame) prevFrame.time = 0;
-                            if (frame.IsDifferentPosition(prevFrame) || isFirstFrame) sb.AppendLine($"<a-animation id=\"{planeID}_F{index}\" attribute=\"position\" {posFrom} {posTo} dur=\"{(frame.time - prevFrame.time) * 1000}\" easing='linear' {animTrigger}></a-animation>");
-                            if (frame.IsDifferentRotation(prevFrame) || isFirstFrame) sb.AppendLine($"<a-animation id=\"{planeID}_F{index}\" attribute=\"rotation\" {rotFrom} {rotTo} dur=\"{(frame.time - prevFrame.time) * 1000}\" easing='linear' {animTrigger}></a-animation>");
-                            if (frame.IsDifferentWidth(prevFrame) || isFirstFrame) sb.AppendLine($"<a-animation id=\"{planeID}_F{index}\" attribute=\"width\" {widthFrom} {widthTo} dur=\"{(frame.time - prevFrame.time) * 1000}\" easing='linear' {animTrigger}></a-animation>");
-                            if (frame.IsDifferentHeight(prevFrame) || isFirstFrame) sb.AppendLine($"<a-animation id=\"{planeID}_F{index}\" attribute=\"height\" {heightFrom} {heightTo} dur=\"{(frame.time - prevFrame.time) * 1000}\" easing='linear' {animTrigger}></a-animation>");
+                            if (frame.IsDifferentPosition(prevFrame) || isFirstFrame) sb.AppendLine($"animation__{planeID}_f{index}=\" property: position; {posFrom} {posTo} dur: {(frame.time - prevFrame.time) * 1000}; easing: linear; {animTrigger}\"");
+                            if (frame.IsDifferentRotation(prevFrame) || isFirstFrame) sb.AppendLine($"animation__{planeID}_f{index}=\" property: rotation; {rotFrom} {rotTo} dur: {(frame.time - prevFrame.time) * 1000}; easing: linear; {animTrigger}\"");
+                            if (frame.IsDifferentWidth(prevFrame) || isFirstFrame) sb.AppendLine($"animation__{planeID}_f{index}=\" property: width; {widthFrom} {widthTo} dur: {(frame.time - prevFrame.time) * 1000}; easing: linear; {animTrigger}\"");
+                            if (frame.IsDifferentHeight(prevFrame) || isFirstFrame) sb.AppendLine($"animation__{planeID}_f{index}=\" property: height; {heightFrom} {heightTo} dur: {(frame.time - prevFrame.time) * 1000}; easing: linear; {animTrigger}\"");
                         }
                     }
-                    sb.AppendLine("</a-plane>");
+                    sb.AppendLine("></a-plane>");
                     break;
 
                 case "Video":
-                    string videoID = childToAdd.name + "_" + i;
+                    string videoID = childToAdd.name.ToLower() + "_" + i;
                     var Video = (width: childToAdd.transform.localScale.x, height: childToAdd.transform.localScale.y,
                                 position: -childToAdd.transform.localPosition.x / 10 + " " + childToAdd.transform.localPosition.y / 10 + " " + childToAdd.transform.localPosition.z / 10,
                                 rotation: childToAdd.transform.localEulerAngles.x + " " + -childToAdd.transform.localEulerAngles.y + " " + -childToAdd.transform.localEulerAngles.z,
                                 color: "#" + ColorUtility.ToHtmlStringRGB(childToAdd.GetComponentInChildren<MeshRenderer>().sharedMaterial.color),
                                 src: "#" + childToAdd.name + "_Asset_" + i);
-                    sb.AppendLine($"<a-video src=\"{Video.src}\" id=\"{childToAdd.name + "_" + i}\" class=\"intersectable\" width=\"{Video.width}\" height=\"{Video.height}\" position=\"{Video.position}\" rotation=\"{Video.rotation}\" color=\"{Video.color}\" transparent={transparency}>");
+                    sb.AppendLine($"<a-video src=\"{Video.src}\" id=\"{childToAdd.name + "_" + i}\" class=\"intersectable\" width=\"{Video.width}\" height=\"{Video.height}\" position=\"{Video.position}\" rotation=\"{Video.rotation}\" color=\"{Video.color}\" transparent={transparency}");
 
                     if (childToAdd.GetComponent<AnimationHelper>() != null)
                     {
@@ -389,33 +307,33 @@ public class CompileFile : MonoBehaviour
                             if (index > 0)
                             {
                                 prevFrame = keyList.frameList[index - 1];
-                                posFrom = $"from=\"{-prevFrame.posX / 10} {prevFrame.posY / 10} {prevFrame.posZ / 10}\"";
-                                rotFrom = $"from=\"{prevFrame.rotX} {-prevFrame.rotY} {-prevFrame.rotZ}\"";
-                                widthFrom = $"from=\"{prevFrame.scalX}\"";
-                                heightFrom = $"from=\"{prevFrame.scalY}\"";
+                                posFrom = $"from: {-prevFrame.posX / 10} {prevFrame.posY / 10} {prevFrame.posZ / 10};";
+                                rotFrom = $"from: {prevFrame.rotX} {-prevFrame.rotY} {-prevFrame.rotZ};";
+                                widthFrom = $"from: {prevFrame.scalX};";
+                                heightFrom = $"from: {prevFrame.scalY};";
 
-                                animTrigger = $"begin= \"{videoID}_F{index}\"";
+                                animTrigger = $"startEvents: animationcomplete__{videoID}_f{index-1}" + ((index == 1 && childToAdd.GetComponent<AnimationHelper>().loop) ? $", animationcomplete__{videoID}_f{keyList.frameList.Count - 1};" : ";");
                             }
                             else
                             {
-                                if (childToAdd.GetComponent<AnimationHelper>().onClick) animTrigger = $"begin= \"mousedown\"";
+                                if (childToAdd.GetComponent<AnimationHelper>().onClick) animTrigger = $"startEvents: mousedown;";
                             }
 
-                            string posTo = $"to=\"{-frame.posX / 10} {frame.posY / 10} {frame.posZ / 10}\"",
-                                rotTo = $"to=\"{frame.rotX} {-frame.rotY} {-frame.rotZ}\"",
-                                widthTo = $"to=\"{frame.scalX}\"",
-                                heightTo = $"to=\"{frame.scalY}\"";
+                            string posTo = $"to: {-frame.posX / 10} {frame.posY / 10} {frame.posZ / 10};",
+                                rotTo = $"to: {frame.rotX} {-frame.rotY} {-frame.rotZ};",
+                                widthTo = $"to: {frame.scalX};",
+                                heightTo = $"to: {frame.scalY};";
 
                             //if (childToAdd.GetComponent<AnimationHelper>().loop) loopTrueString = $"repeat = \"indefinite\"";
                             bool isFirstFrame = prevFrame.time.Equals(-1) ? true : false;
                             if (isFirstFrame) prevFrame.time = 0;
-                            if (frame.IsDifferentPosition(prevFrame) || isFirstFrame) sb.AppendLine($"<a-animation id=\"{videoID}_F{index}\" attribute=\"position\" {posFrom} {posTo} dur=\"{(frame.time - prevFrame.time) * 1000}\" easing='linear' {animTrigger}></a-animation>");
-                            if (frame.IsDifferentRotation(prevFrame) || isFirstFrame) sb.AppendLine($"<a-animation id=\"{videoID}_F{index}\" attribute=\"rotation\" {rotFrom} {rotTo} dur=\"{(frame.time - prevFrame.time) * 1000}\" easing='linear' {animTrigger}></a-animation>");
-                            if (frame.IsDifferentWidth(prevFrame) || isFirstFrame) sb.AppendLine($"<a-animation id=\"{videoID}_F{index}\" attribute=\"width\" {widthFrom} {widthTo} dur=\"{(frame.time - prevFrame.time) * 1000}\" easing='linear' {animTrigger}></a-animation>");
-                            if (frame.IsDifferentHeight(prevFrame) || isFirstFrame) sb.AppendLine($"<a-animation id=\"{videoID}_F{index}\" attribute=\"height\" {heightFrom} {heightTo} dur=\"{(frame.time - prevFrame.time) * 1000}\" easing='linear' {animTrigger}></a-animation>");
+                            if (frame.IsDifferentPosition(prevFrame) || isFirstFrame) sb.AppendLine($"animation__{videoID}_f{index}=\" property: position; {posFrom} {posTo} dur: {(frame.time - prevFrame.time) * 1000}; easing: linear; {animTrigger}\"");
+                            if (frame.IsDifferentRotation(prevFrame) || isFirstFrame) sb.AppendLine($"animation__{videoID}_f{index}=\" property: rotation; {rotFrom} {rotTo} dur: {(frame.time - prevFrame.time) * 1000}; easing: linear; {animTrigger}\"");
+                            if (frame.IsDifferentWidth(prevFrame) || isFirstFrame) sb.AppendLine($"animation__{videoID}_f{index}=\" property: width; {widthFrom} {widthTo} dur: {(frame.time - prevFrame.time) * 1000}; easing: linear; {animTrigger}\"");
+                            if (frame.IsDifferentHeight(prevFrame) || isFirstFrame) sb.AppendLine($"animation__{videoID}_f{index}=\" property: height; {heightFrom} {heightTo} dur: {(frame.time - prevFrame.time) * 1000}; easing: linear; {animTrigger}\"");
                         }
                     }
-                    sb.AppendLine("</a-video>");
+                    sb.AppendLine("></a-video>");
                     break;
 
                 case "Cube":
@@ -424,9 +342,9 @@ public class CompileFile : MonoBehaviour
                                 rotation: childToAdd.transform.localEulerAngles.x + " " + -childToAdd.transform.localEulerAngles.y + " " + -childToAdd.transform.localEulerAngles.z,
                                 color: "#" + ColorUtility.ToHtmlStringRGB(childToAdd.GetComponent<MeshRenderer>().sharedMaterial.color),
                                 src: textureName!=null?"textures/" + textureName + ".png" : "");
-                    sb.AppendLine($"<a-box src=\"{Cube.src}\" id=\"{childToAdd.name + "_" + i}\" class=\"intersectable\" width=\"{Cube.width}\" height=\"{Cube.height}\" depth=\"{Cube.depth}\" position=\"{Cube.position}\" rotation=\"{Cube.rotation}\" color=\"{Cube.color}\" transparent={transparency}>");
+                    sb.AppendLine($"<a-box src=\"{Cube.src}\" id=\"{childToAdd.name + "_" + i}\" class=\"intersectable\" width=\"{Cube.width}\" height=\"{Cube.height}\" depth=\"{Cube.depth}\" position=\"{Cube.position}\" rotation=\"{Cube.rotation}\" color=\"{Cube.color}\" transparent={transparency}");
 
-                    string cubeID = childToAdd.name + "_" + i;
+                    string cubeID = childToAdd.name.ToLower() + "_" + i;
 
                     if (childToAdd.GetComponent<AnimationHelper>() != null)
                     {
@@ -443,47 +361,47 @@ public class CompileFile : MonoBehaviour
                             if (index > 0)
                             {
                                 prevFrame = keyList.frameList[index - 1];
-                                posFrom = $"from=\"{-prevFrame.posX / 10} {prevFrame.posY / 10} {prevFrame.posZ / 10}\"";
-                                rotFrom = $"from=\"{prevFrame.rotX} {-prevFrame.rotY} {-prevFrame.rotZ}\"";
-                                widthFrom = $"from=\"{prevFrame.scalX / 10}\"";
-                                heightFrom = $"from=\"{prevFrame.scalY / 10}\"";
-                                depthFrom = $"from=\"{prevFrame.scalZ / 10}\"";
+                                posFrom = $"from: {-prevFrame.posX / 10} {prevFrame.posY / 10} {prevFrame.posZ / 10};";
+                                rotFrom = $"from: {prevFrame.rotX} {-prevFrame.rotY} {-prevFrame.rotZ};";
+                                widthFrom = $"from: {prevFrame.scalX / 10};";
+                                heightFrom = $"from: {prevFrame.scalY / 10};";
+                                depthFrom = $"from: {prevFrame.scalZ / 10};";
 
-                                animTrigger = $"begin= \"{cubeID}_F{index}\"";
+                                animTrigger = $"startEvents: animationcomplete__{cubeID}_f{index-1}" + ((index == 1 && childToAdd.GetComponent<AnimationHelper>().loop) ? $", animationcomplete__{cubeID}_f{keyList.frameList.Count - 1};" : ";");
                             }
                             else
                             {
-                                if(childToAdd.GetComponent<AnimationHelper>().onClick) animTrigger = $"begin= \"mousedown\"";
+                                if(childToAdd.GetComponent<AnimationHelper>().onClick) animTrigger = $"startEvents: mousedown;";
                             }
 
-                            string posTo = $"to=\"{-frame.posX / 10} {frame.posY / 10} {frame.posZ / 10}\"", 
-                                rotTo = $"to=\"{frame.rotX} {-frame.rotY} {-frame.rotZ}\"", 
-                                widthTo = $"to=\"{frame.scalX / 10}\"", 
-                                heightTo = $"to=\"{frame.scalY / 10}\"", 
-                                depthTo = $"to=\"{frame.scalZ / 10}\"";
+                            string posTo = $"to: {-frame.posX / 10} {frame.posY / 10} {frame.posZ / 10};", 
+                                rotTo = $"to: {frame.rotX} {-frame.rotY} {-frame.rotZ};", 
+                                widthTo = $"to: {frame.scalX / 10};", 
+                                heightTo = $"to: {frame.scalY / 10};", 
+                                depthTo = $"to: {frame.scalZ / 10};";
 
                             //if (childToAdd.GetComponent<AnimationHelper>().loop) loopTrueString = $"repeat = \"indefinite\"";
                             bool isFirstFrame = prevFrame.time.Equals(-1) ? true : false;
                             if (isFirstFrame) prevFrame.time = 0;
-                            if (frame.IsDifferentPosition(prevFrame) || isFirstFrame) sb.AppendLine($"<a-animation id=\"{cubeID}_F{index}\" attribute=\"position\" {posFrom} {posTo} dur=\"{(frame.time-prevFrame.time)*1000}\" easing='linear' {animTrigger}></a-animation>");
-                            if (frame.IsDifferentRotation(prevFrame) || isFirstFrame) sb.AppendLine($"<a-animation id=\"{cubeID}_F{index}\" attribute=\"rotation\" {rotFrom} {rotTo} dur=\"{(frame.time - prevFrame.time) * 1000}\" easing='linear' {animTrigger}></a-animation>");
-                            if (frame.IsDifferentWidth(prevFrame) || isFirstFrame) sb.AppendLine($"<a-animation id=\"{cubeID}_F{index}\" attribute=\"width\" {widthFrom} {widthTo} dur=\"{(frame.time - prevFrame.time) * 1000}\" easing='linear' {animTrigger}></a-animation>");
-                            if (frame.IsDifferentHeight(prevFrame) || isFirstFrame) sb.AppendLine($"<a-animation id=\"{cubeID}_F{index}\" attribute=\"height\" {heightFrom} {heightTo} dur=\"{(frame.time - prevFrame.time) * 1000}\" easing='linear' {animTrigger}></a-animation>");
-                            if (frame.IsDifferentDepth(prevFrame) || isFirstFrame) sb.AppendLine($"<a-animation id=\"{cubeID}_F{index}\" attribute=\"depth\" {depthFrom} {depthTo} dur=\"{(frame.time - prevFrame.time) * 1000}\" easing='linear' {animTrigger}></a-animation>");
+                            if (frame.IsDifferentPosition(prevFrame) || isFirstFrame) sb.AppendLine($"animation__{cubeID}_f{index}=\"property: position; {posFrom} {posTo} dur: {(frame.time-prevFrame.time)*1000}; easing: linear; {animTrigger}\"");
+                            if (frame.IsDifferentRotation(prevFrame) || isFirstFrame) sb.AppendLine($"animation__{cubeID}_f{index}=\"property: rotation; {rotFrom} {rotTo} dur: {(frame.time - prevFrame.time) * 1000}; easing: linear; {animTrigger}\"");
+                            if (frame.IsDifferentWidth(prevFrame) || isFirstFrame) sb.AppendLine($"animation__{cubeID}_f{index}=\"property: width; {widthFrom} {widthTo} dur: {(frame.time - prevFrame.time) * 1000}; easing: linear; {animTrigger}\"");
+                            if (frame.IsDifferentHeight(prevFrame) || isFirstFrame) sb.AppendLine($"animation__{cubeID}_f{index}=\"property: height; {heightFrom} {heightTo} dur: {(frame.time - prevFrame.time) * 1000}; easing: linear; {animTrigger}\"");
+                            if (frame.IsDifferentDepth(prevFrame) || isFirstFrame) sb.AppendLine($"animation__{cubeID}_f{index}=\"property: depth; {depthFrom} {depthTo} dur: {(frame.time - prevFrame.time) * 1000}; easing: linear; {animTrigger}\"");
                         }
                     }
-                    sb.AppendLine("</a-box>");
+                    sb.AppendLine("></a-box>");
                     break;
 
                 case "Model":
-                    string modelID = childToAdd.name + "_" + i;
+                    string modelID = childToAdd.name.ToLower() + "_" + i;
 
                     var Model = (width: childToAdd.transform.localScale.x / 10, height: childToAdd.transform.localScale.y / 10, depth: childToAdd.transform.localScale.z / 10,
                                 position: -childToAdd.transform.localPosition.x / 10 + " " + childToAdd.transform.localPosition.y / 10 + " " + childToAdd.transform.localPosition.z / 10,
                                 rotation: childToAdd.transform.localEulerAngles.x + " " + -childToAdd.transform.localEulerAngles.y + " " + -childToAdd.transform.localEulerAngles.z,
                                 color: "#ffffff",
                                 src: textureName != null ? "textures/" + textureName + ".png" : "");
-                    sb.AppendLine($"<a-entity obj-model=\"obj: #{childToAdd.name + "_Asset_obj_" + i}; mtl: #{childToAdd.name + "_Asset_mtl_" + i}\" id=\"{childToAdd.name + "_" + i}\" class=\"intersectable\" scale=\"{Model.width} {Model.height} {Model.depth}\" position=\"{Model.position}\" rotation=\"{Model.rotation}\" color=\"{Model.color}\" transparent={transparency}>");
+                    sb.AppendLine($"<a-entity obj-model=\"obj: #{childToAdd.name + "_Asset_obj_" + i}; mtl: #{childToAdd.name + "_Asset_mtl_" + i}\" id=\"{childToAdd.name + "_" + i}\" class=\"intersectable\" scale=\"{Model.width} {Model.height} {Model.depth}\" position=\"{Model.position}\" rotation=\"{Model.rotation}\" color=\"{Model.color}\" transparent={transparency}");
 
 
                     if (childToAdd.GetComponent<AnimationHelper>() != null)
@@ -501,30 +419,30 @@ public class CompileFile : MonoBehaviour
                             if (index > 0)
                             {
                                 prevFrame = keyList.frameList[index - 1];
-                                posFrom = $"from=\"{-prevFrame.posX / 10} {prevFrame.posY / 10} {prevFrame.posZ / 10}\"";
-                                rotFrom = $"from=\"{prevFrame.rotX} {-prevFrame.rotY} {-prevFrame.rotZ}\"";
-                                scaleFrom = $"from=\"{prevFrame.scalX / 10} {prevFrame.scalY / 10} {prevFrame.scalZ / 10}\"";
+                                posFrom = $"from: {-prevFrame.posX / 10} {prevFrame.posY / 10} {prevFrame.posZ / 10};";
+                                rotFrom = $"from: {prevFrame.rotX} {-prevFrame.rotY} {-prevFrame.rotZ};";
+                                scaleFrom = $"from: {prevFrame.scalX / 10} {prevFrame.scalY / 10} {prevFrame.scalZ / 10};";
 
-                                animTrigger = $"begin= \"{modelID}_F{index}\"";
+                                animTrigger = $"startEvents: animationcomplete__{modelID}_f{index-1}" + ((index == 1 && childToAdd.GetComponent<AnimationHelper>().loop) ? $", animationcomplete__{modelID}_f{keyList.frameList.Count - 1};" : ";");
                             }
                             else
                             {
-                                if (childToAdd.GetComponent<AnimationHelper>().onClick) animTrigger = $"begin= \"mousedown\"";
+                                if (childToAdd.GetComponent<AnimationHelper>().onClick) animTrigger = $"startEvents: mousedown;";
                             }
 
-                            string posTo = $"to=\"{-frame.posX / 10} {frame.posY / 10} {frame.posZ / 10}\"",
-                                rotTo = $"to=\"{frame.rotX} {-frame.rotY} {-frame.rotZ}\"",
-                                scaleTo = $"to=\"{frame.scalX / 10} {frame.scalY / 10} {frame.scalZ / 10}\"";
+                            string posTo = $"to: {-frame.posX / 10} {frame.posY / 10} {frame.posZ / 10};",
+                                rotTo = $"to: {frame.rotX} {-frame.rotY} {-frame.rotZ};",
+                                scaleTo = $"to: {frame.scalX / 10} {frame.scalY / 10} {frame.scalZ / 10};";
 
                             //if (childToAdd.GetComponent<AnimationHelper>().loop) loopTrueString = $"repeat = \"indefinite\"";
                             bool isFirstFrame = prevFrame.time.Equals(-1) ? true : false;
                             if (isFirstFrame) prevFrame.time = 0;
-                            if (frame.IsDifferentPosition(prevFrame) || isFirstFrame) sb.AppendLine($"<a-animation id=\"{modelID}_F{index}\" attribute=\"position\" {posFrom} {posTo} dur=\"{(frame.time - prevFrame.time) * 1000}\" easing='linear' {animTrigger}></a-animation>");
-                            if (frame.IsDifferentRotation(prevFrame) || isFirstFrame) sb.AppendLine($"<a-animation id=\"{modelID}_F{index}\" attribute=\"rotation\" {rotFrom} {rotTo} dur=\"{(frame.time - prevFrame.time) * 1000}\" easing='linear' {animTrigger}></a-animation>");
-                            if (frame.IsDifferentWidth(prevFrame) || isFirstFrame) sb.AppendLine($"<a-animation id=\"{modelID}_F{index}\" attribute=\"scale\" {scaleFrom} {scaleTo} dur=\"{(frame.time - prevFrame.time) * 1000}\" easing='linear' {animTrigger}></a-animation>");
+                            if (frame.IsDifferentPosition(prevFrame) || isFirstFrame) sb.AppendLine($"animation__{modelID}_f{index}=\" property: position; {posFrom} {posTo} dur: {(frame.time - prevFrame.time) * 1000}; easing: linear; {animTrigger}\"");
+                            if (frame.IsDifferentRotation(prevFrame) || isFirstFrame) sb.AppendLine($"animation__{modelID}_f{index}=\" property: rotation; {rotFrom} {rotTo} dur: {(frame.time - prevFrame.time) * 1000}; easing: linear; {animTrigger}\"");
+                            if (frame.IsDifferentWidth(prevFrame) || isFirstFrame) sb.AppendLine($"animation__{modelID}_f{index}=\" property: scale; {scaleFrom} {scaleTo} dur: {(frame.time - prevFrame.time) * 1000}; easing: linear; {animTrigger}\"");
                         }
                     }
-                    sb.AppendLine("</a-entity>");
+                    sb.AppendLine("></a-entity>");
                     break;
 
                 case "Sphere":
@@ -534,8 +452,8 @@ public class CompileFile : MonoBehaviour
                                 color: "#" + ColorUtility.ToHtmlStringRGB(childToAdd.GetComponent<MeshRenderer>().sharedMaterial.color),
                                 src: textureName != null ? "textures/" + textureName + ".png" : "");
                     Debug.Log(Sphere.src);
-                    sb.AppendLine($"<a-sphere src=\"{Sphere.src}\" id=\"{childToAdd.name + "_" + i}\" class=\"intersectable\" radius=\"{Sphere.radius}\" position=\"{Sphere.position}\" rotation=\"{Sphere.rotation}\" color=\"{Sphere.color}\" transparent={transparency}>");
-                    string shpereID = childToAdd.name + "_" + i;
+                    sb.AppendLine($"<a-sphere src=\"{Sphere.src}\" id=\"{childToAdd.name + "_" + i}\" class=\"intersectable\" radius=\"{Sphere.radius}\" position=\"{Sphere.position}\" rotation=\"{Sphere.rotation}\" color=\"{Sphere.color}\" transparent={transparency}");
+                    string shpereID = childToAdd.name.ToLower() + "_" + i;
                     if (childToAdd.GetComponent<AnimationHelper>() != null)
                     {
                         string animationFile = File.ReadAllText(Application.dataPath + "/Animations/JsonExports/" + SceneManager.GetActiveScene().name + "/" + shpereID + ".txt");
@@ -551,30 +469,30 @@ public class CompileFile : MonoBehaviour
                             if (index > 0)
                             {
                                 prevFrame = keyList.frameList[index - 1];
-                                posFrom = $"from=\"{-prevFrame.posX / 10} {prevFrame.posY / 10} {prevFrame.posZ / 10}\"";
-                                rotFrom = $"from=\"{prevFrame.rotX} {-prevFrame.rotY} {-prevFrame.rotZ}\"";
-                                radiusFrom = $"from=\"{prevFrame.scalX / 20}\"";
+                                posFrom = $"from: {-prevFrame.posX / 10} {prevFrame.posY / 10} {prevFrame.posZ / 10};";
+                                rotFrom = $"from: {prevFrame.rotX} {-prevFrame.rotY} {-prevFrame.rotZ};";
+                                radiusFrom = $"from: {prevFrame.scalX / 20};";
 
-                                animTrigger = $"begin= \"{shpereID}_F{index}\"";
+                                animTrigger = $"startEvents: animationcomplete__{shpereID}_f{index-1}" + ((index == 1 && childToAdd.GetComponent<AnimationHelper>().loop) ? $", animationcomplete__{shpereID}_f{keyList.frameList.Count - 1};" : ";");
                             }
                             else
                             {
-                                if (childToAdd.GetComponent<AnimationHelper>().onClick) animTrigger = $"begin= \"mousedown\"";
+                                if (childToAdd.GetComponent<AnimationHelper>().onClick) animTrigger = $"startEvents: mousedown;";
                             }
 
-                            string posTo = $"to=\"{-frame.posX / 10} {frame.posY / 10} {frame.posZ / 10}\"",
-                                rotTo = $"to=\"{frame.rotX} {-frame.rotY} {-frame.rotZ}\"",
-                                radiusTo = $"to=\"{frame.scalX / 20}\"";
+                            string posTo = $"to: {-frame.posX / 10} {frame.posY / 10} {frame.posZ / 10};",
+                                rotTo = $"to: {frame.rotX} {-frame.rotY} {-frame.rotZ};",
+                                radiusTo = $"to: {frame.scalX / 20};";
 
                             //if (childToAdd.GetComponent<AnimationHelper>().loop) loopTrueString = $"repeat = \"indefinite\"";
                             bool isFirstFrame = prevFrame.time.Equals(-1) ? true : false;
                             if (isFirstFrame) prevFrame.time = 0;
-                            if (frame.IsDifferentPosition(prevFrame) || isFirstFrame) sb.AppendLine($"<a-animation id=\"{shpereID}_F{index}\" attribute=\"position\" {posFrom} {posTo} dur=\"{(frame.time - prevFrame.time) * 1000}\" easing='linear' {animTrigger}></a-animation>");
-                            if (frame.IsDifferentRotation(prevFrame) || isFirstFrame) sb.AppendLine($"<a-animation id=\"{shpereID}_F{index}\" attribute=\"rotation\" {rotFrom} {rotTo} dur=\"{(frame.time - prevFrame.time) * 1000}\" easing='linear' {animTrigger}></a-animation>");
-                            if (frame.IsDifferentWidth(prevFrame) || isFirstFrame) sb.AppendLine($"<a-animation id=\"{shpereID}_F{index}\" attribute=\"radius\" {radiusFrom} {radiusTo} dur=\"{(frame.time - prevFrame.time) * 1000}\" easing='linear' {animTrigger}></a-animation>");
+                            if (frame.IsDifferentPosition(prevFrame) || isFirstFrame) sb.AppendLine($"animation__{shpereID}_f{index}= \"property: position; {posFrom} {posTo} dur: {(frame.time - prevFrame.time) * 1000}; easing: linear; {animTrigger}\"");
+                            if (frame.IsDifferentRotation(prevFrame) || isFirstFrame) sb.AppendLine($"animation__{shpereID}_f{index}= \"property: rotation; {rotFrom} {rotTo} dur: {(frame.time - prevFrame.time) * 1000}; easing: linear; {animTrigger}\"");
+                            if (frame.IsDifferentWidth(prevFrame) || isFirstFrame) sb.AppendLine($"animation__{shpereID}_f{index}= \"property: radius; {radiusFrom} {radiusTo} dur: {(frame.time - prevFrame.time) * 1000}; easing: linear; {animTrigger}\"");
                         }
                     }
-                    sb.AppendLine("</a-sphere>");
+                    sb.AppendLine("></a-sphere>");
 
                     break;
 
@@ -585,8 +503,8 @@ public class CompileFile : MonoBehaviour
                                 color: "#" + ColorUtility.ToHtmlStringRGB(childToAdd.GetComponent<MeshRenderer>().sharedMaterial.color),
                                 src: textureName != null ? "textures/" + textureName + ".png": "");
                     Debug.Log(Cylinder.src);
-                    sb.AppendLine($"<a-cylinder src=\"{Cylinder.src}\" id=\"{childToAdd.name + "_" + i}\" class=\"intersectable\" radius=\"{Cylinder.radius}\" height=\"{Cylinder.height}\" position=\"{Cylinder.position}\" rotation=\"{Cylinder.rotation}\" color=\"{Cylinder.color}\" transparent={transparency}>");
-                    string cylinderID = childToAdd.name + "_" + i;
+                    sb.AppendLine($"<a-cylinder src=\"{Cylinder.src}\" id=\"{childToAdd.name + "_" + i}\" class=\"intersectable\" radius=\"{Cylinder.radius}\" height=\"{Cylinder.height}\" position=\"{Cylinder.position}\" rotation=\"{Cylinder.rotation}\" color=\"{Cylinder.color}\" transparent={transparency}");
+                    string cylinderID = childToAdd.name.ToLower() + "_" + i;
                     if (childToAdd.GetComponent<AnimationHelper>() != null)
                     {
                         string animationFile = File.ReadAllText(Application.dataPath + "/Animations/JsonExports/" + SceneManager.GetActiveScene().name + "/" + cylinderID + ".txt");
@@ -602,33 +520,33 @@ public class CompileFile : MonoBehaviour
                             if (index > 0)
                             {
                                 prevFrame = keyList.frameList[index - 1];
-                                posFrom = $"from=\"{-prevFrame.posX / 10} {prevFrame.posY / 10} {prevFrame.posZ / 10}\"";
-                                rotFrom = $"from=\"{prevFrame.rotX} {-prevFrame.rotY} {-prevFrame.rotZ}\"";
-                                radiusFrom = $"from=\"{(prevFrame.scalX + prevFrame.scalZ) / 40}\"";
-                                heightFrom = $"from=\"{prevFrame.scalY / 5}\"";
+                                posFrom = $"from: {-prevFrame.posX / 10} {prevFrame.posY / 10} {prevFrame.posZ / 10};";
+                                rotFrom = $"from: {prevFrame.rotX} {-prevFrame.rotY} {-prevFrame.rotZ};";
+                                radiusFrom = $"from: {(prevFrame.scalX + prevFrame.scalZ) / 40};";
+                                heightFrom = $"from: {prevFrame.scalY / 5};";
 
-                                animTrigger = $"begin= \"{cylinderID}_F{index}\"";
+                                animTrigger = $"startEvents: animationcomplete__{cylinderID}_f{index-1}" + ((index == 1 && childToAdd.GetComponent<AnimationHelper>().loop) ? $", animationcomplete__{cylinderID}_f{keyList.frameList.Count - 1};" : ";");
                             }
                             else
                             {
-                                if (childToAdd.GetComponent<AnimationHelper>().onClick) animTrigger = $"begin= \"mousedown\"";
+                                if (childToAdd.GetComponent<AnimationHelper>().onClick) animTrigger = $"startEvents: mousedown;";
                             }
 
-                            string posTo = $"to=\"{-frame.posX / 10} {frame.posY / 10} {frame.posZ / 10}\"",
-                                rotTo = $"to=\"{frame.rotX} {-frame.rotY} {-frame.rotZ}\"",
-                                radiusTo = $"to=\"{(frame.scalX + frame.scalZ) / 40}\"",
-                                heightTo = $"to=\"{frame.scalY / 5}\"";
+                            string posTo = $"to: {-frame.posX / 10} {frame.posY / 10} {frame.posZ / 10};",
+                                rotTo = $"to: {frame.rotX} {-frame.rotY} {-frame.rotZ};",
+                                radiusTo = $"to: {(frame.scalX + frame.scalZ) / 40};",
+                                heightTo = $"to: {frame.scalY / 5};";
 
                             //if (childToAdd.GetComponent<AnimationHelper>().loop) loopTrueString = $"repeat = \"indefinite\"";
                             bool isFirstFrame = prevFrame.time.Equals(-1) ? true : false;
                             if (isFirstFrame) prevFrame.time = 0;
-                            if (frame.IsDifferentPosition(prevFrame) || isFirstFrame) sb.AppendLine($"<a-animation id=\"{cylinderID}_F{index}\" attribute=\"position\" {posFrom} {posTo} dur=\"{(frame.time - prevFrame.time) * 1000}\" easing='linear' {animTrigger}></a-animation>");
-                            if (frame.IsDifferentRotation(prevFrame) || isFirstFrame) sb.AppendLine($"<a-animation id=\"{cylinderID}_F{index}\" attribute=\"rotation\" {rotFrom} {rotTo} dur=\"{(frame.time - prevFrame.time) * 1000}\" easing='linear' {animTrigger}></a-animation>");
-                            if (frame.IsDifferentWidth(prevFrame) || isFirstFrame) sb.AppendLine($"<a-animation id=\"{cylinderID}_F{index}\" attribute=\"radius\" {radiusFrom} {radiusTo} dur=\"{(frame.time - prevFrame.time) * 1000}\" easing='linear' {animTrigger}></a-animation>");
-                            if (frame.IsDifferentHeight(prevFrame) || isFirstFrame) sb.AppendLine($"<a-animation id=\"{cylinderID}_F{index}\" attribute=\"height\" {heightFrom} {heightTo} dur=\"{(frame.time - prevFrame.time) * 1000}\" easing='linear' {animTrigger}></a-animation>");
+                            if (frame.IsDifferentPosition(prevFrame) || isFirstFrame) sb.AppendLine($"animation__{cylinderID}_f{index}=\" property: position; {posFrom} {posTo} dur: {(frame.time - prevFrame.time) * 1000}; easing: linear; {animTrigger}\"");
+                            if (frame.IsDifferentRotation(prevFrame) || isFirstFrame) sb.AppendLine($"animation__{cylinderID}_f{index}=\" property: rotation; {rotFrom} {rotTo} dur: {(frame.time - prevFrame.time) * 1000}; easing: linear; {animTrigger}\"");
+                            if (frame.IsDifferentWidth(prevFrame) || isFirstFrame) sb.AppendLine($"animation__{cylinderID}_f{index}=\" property: radius; {radiusFrom} {radiusTo} dur: {(frame.time - prevFrame.time) * 1000}; easing: linear; {animTrigger}\"");
+                            if (frame.IsDifferentHeight(prevFrame) || isFirstFrame) sb.AppendLine($"animation__{cylinderID}_f{index}=\" property: height; {heightFrom} {heightTo} dur: {(frame.time - prevFrame.time) * 1000}; easing: linear; {animTrigger}\"");
                         }
                     }
-                    sb.AppendLine("</a-cylinder>");
+                    sb.AppendLine("></a-cylinder>");
                     break;
 
                 default:
@@ -641,9 +559,9 @@ public class CompileFile : MonoBehaviour
         #endregion Unity Compiled Objects
 
         sb.AppendLine("");
-        sb.AppendLine("<!-- BEGIN: Bottome HTML -->");
+        sb.AppendLine("<!-- BEGIN: Bottom HTML -->");
         sb.Append(bottomHTML);
-        sb.AppendLine("<!-- END: Bottome HTML -->");
+        sb.AppendLine("<!-- END: Bottom HTML -->");
 
         File.WriteAllText(folderPath + fileName, sb.ToString());
         Debug.Log("index file successfully created");

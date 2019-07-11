@@ -46,7 +46,6 @@ public class AnimationHelper : MonoBehaviour
         if (keyList != null && currentKeyFrameNumber<keyList.frameList.Count)
         {
             WeldonKeyFrame frame = keyList.frameList[currentKeyFrameNumber];
-            Debug.Log(gameObject.name);
             float timeToUse = frame.time;
             if (currentKeyFrameNumber>0) timeToUse = frame.time - keyList.frameList[currentKeyFrameNumber - 1].time;
 
