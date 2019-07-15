@@ -33,7 +33,7 @@ public class CompileFile : MonoBehaviour
 
         #region HTML Strings
         string aframeString = "<script src=\"https://aframe.io/releases/0.9.2/aframe.min.js\"></script>";
-        string topHTML = $"<!DOCTYPE html>\n<!-- include aframe -->\n{aframeString}\n<!-- include ar.js -->\n<script src=\"https://cdn.rawgit.com/jeromeetienne/AR.js/1.7.2/aframe/build/aframe-ar.js\"></script>\n\n<!-- to load .ply model -->\n<script src=\"https://rawgit.com/donmccurdy/aframe-extras/v3.13.1/dist/aframe-extras.loaders.min.js\"></script>\n\n";
+        string topHTML = $"<!DOCTYPE html>\n<!-- include aframe -->\n{aframeString}\n<!-- include ar.js -->\n<script src=\"https://cdn.rawgit.com/jeromeetienne/AR.js/1.7.2/aframe/build/aframe-ar.js\"></script>\n\n<!-- to load .ply model -->\n<script src=\"https://rawgit.com/donmccurdy/aframe-extras/v6.0.0/dist/aframe-extras.loaders.min.js\"></script>\n\n";
         string bodyHtml = @"<body style='margin : 0px; overflow: hidden; font-family: Monospace;'>";
         string middleHTML = @"<!-- <a-scene embedded arjs='debugUIEnabled: false; sourceType: video; sourceUrl:../../data/videos/headtracking.mp4;'> -->
     <a-scene embedded arjs='debugUIEnabled: false; sourceType: webcam' vr-mode-ui='enabled: false'>
