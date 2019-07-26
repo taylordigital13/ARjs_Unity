@@ -161,7 +161,7 @@ public class ARGameObjectCreator : MonoBehaviour
         }
     }
 
-    [MenuItem("AR.js/Make Animation", false, 5)]
+    [MenuItem("AR.js/Make Animation/Linear", false, 5)]
     static void ConvertItemToAnimation()
     {
         GameObject obj = Selection.activeGameObject;
@@ -169,8 +169,38 @@ public class ARGameObjectCreator : MonoBehaviour
         obj.AddComponent<CustomList>();
     }
 
-    [MenuItem("AR.js/Make Animation", true)]
+    [MenuItem("AR.js/Make Animation/Linear", true)]
     static bool MakeAnimationMenuOptionValidation()
+    {
+        GameObject obj = Selection.activeGameObject;
+        if (obj == null) return false;
+        if ((obj.CompareTag("Cube") || obj.CompareTag("Plane") || obj.CompareTag("Sphere") || obj.CompareTag("Cylinder") || obj.CompareTag("Model") || obj.CompareTag("Video")) && obj.GetComponent<AnimationHelper>() == null)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    [MenuItem("AR.js/Make Animation/Nonlinear positional", false, 5)]
+    static void ConvertItemToBezierAnimation()
+    {
+        GameObject curve = AssetDatabase.LoadAssetAtPath(pathToUse + "BezierManager.prefab", typeof(GameObject)) as GameObject;
+        GameObject sceneCurve;
+        if (Selection.activeGameObject != null)
+        {
+            sceneCurve = Instantiate(curve, Vector3.zero, Quaternion.identity, Selection.activeGameObject.transform) as GameObject;
+        }
+        else
+        {
+            sceneCurve = Instantiate(curve, Vector3.zero, Quaternion.identity);
+        }
+    }
+
+    [MenuItem("AR.js/Make Animation/Nonlinear positional", true)]
+    static bool MakBezierAnimationMenuOptionValidation()
     {
         GameObject obj = Selection.activeGameObject;
         if (obj == null) return false;

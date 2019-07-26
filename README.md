@@ -27,12 +27,17 @@ Select the object in question that you want to make into a button. Then click th
 ### Videos
 Videos are very similar to Planes. You can add a video by right clicking the image target, selecting AR.js>Video. The Video object has a child also called "Video". The child called Video has a video player component. Drag and drop your video clip into the Video Players empty spot called "Video Clip". Select the parent Video in order to change the position, scale and rotation of the video. If you're changing the transform of the child, it won't export that information correctly. NOTE: Adding a video will also add a Mute/Unmute button to the webpage. This is mostly for iOS as it is required to have a mute button in order for there to be sound on the video.
 
-### Animating Objects
-Select the object that you want to animate, click the "AR.js" menu item, and select "Make Animation." This will add two scripts to the object. The one you will need to use for adding keyframes to your animation is the Custom List script [(that I modified from this original post)](https://forum.unity.com/threads/display-a-list-class-with-a-custom-editor-script.227847/). 
+### Animating Objects (Linear)
+Select the object that you want to animate, click the "AR.js" menu item, and select "Make Animation" then select "Linear." This will add two scripts to the object. The one you will need to use for adding keyframes to your animation is the Custom List script [(that I modified from this original post)](https://forum.unity.com/threads/display-a-list-class-with-a-custom-editor-script.227847/). 
 
 You can move your object anywhere and record that as a point (change the FrameTime to change when the object is supposed to get to that position). It will then be added to a list of keyframes. Note: you need to have at least one keyframe at time 0. After adding it to the list, each keyframe can be expanded and edited. If you want to check what that keyframe actually looks like, you can click "Set Transform from Frame," and it will set the transform of your object to what was recorded to that frame. If you move your object around a bit, and click "Update Transform" it will change the position, rotation, and scale for that keyframe to the objects current transform. You can change the time of the keyframe and it will be reordered in the list of keyframes to be chronological. **After you have all your keyframes, Click "Export Animation."** This will create a JSON file of all the keyframes you have made for the animation. If you then click the play button, you can see what your animation looks like.
 
 There is a loop option, and a click option that you can enable. If checked, the "Loop Animation" option will cause the animation to loop. The "On Click" option will make the animation trigger upon your click (though only when you finally compile to HTML, and not when you click play in the Unity Editor).
+
+### Animating Objects (Bezier Curve)
+There is a lot I need to add here for it to be fully functional. Particularly a way of also rotating and scaling the objects. Right now, it only works with positional animation. And I need to add in several options like execute on click. Right now though, you can use it and get a feel for how this feature works.
+
+On an AR.js object, click AR.js > Make Animation > Nonlinear Positional. This adds the Bezier Manager as a child to the object with two points. When the "BezierManager(Clone)" is selected in the inspector, you can create new points, loop/unloop the path (connect or disconnect the last point to the start point), or show/hide all the points and lines. When one of the points is selected, you can delete it. When a control point is selected, you can select "locked" and it will make the rotation of the opposite side control point mirror the control point you're moving. This locked feature allows you to more easily keep your animation curve smooth.
 
 ### Compiling to HTML
 For Testing locally on your computer, click the "AR.js" menu item, then click "Compile Files>Testing" (this will prevent an error that causes textures not to render). For publishing to a website, click "CompileFiles>Final" (this will improve the clickablity of objects on mobile devices. Both of these options will create a file located in Assets>AR.js-master>aframe>{Active Scene Name}>index.html
@@ -42,12 +47,14 @@ This is the final file and can be opened in a browser to view the AR experience 
 ## How it Works
 The CompileFile.cs script is where the majority of the work happens. It's just a lot of loops and conditional statements that goes through ever object attached to the ImageTarget in scene, and adds HTML text to a StringBuilder accordingly then saves the giant string as a file called index.html
 
-The Animations could use simplified a fair bit. Currently, you create a KeyFrame list for the object and when you export it, it creates a file specific to the object in Assets>Animations>JsonExports>{Active Scene Name}. Then when you either run the scene in Unity, or compile the HTML file, it will read back in the KeyFrame list from the json text file. This is unecessary and will be changed in the future. As well as merging the Animation helper and Custom List scripts.
-
 ## Acknowledgments
 A huge shout out to Jerome Etienne for enabling Augmented Reality through any web browser. [GitHub again](https://github.com/jeromeetienne/AR.js)
 
 Thank you to ForceX for the [Custom List template](https://forum.unity.com/threads/display-a-list-class-with-a-custom-editor-script.227847/) I'm using to make the KeyFrame list easily editable.
+
+Thank you to Amit Kapdi from The App Guruz for his fantastic [article and code](http://www.theappguruz.com/blog/bezier-curve-in-games) for making Bezier Curves in Unity.
+
+Thank you to Lee Stemkoski for his [fantastic examples](https://stemkoski.github.io/AR-Examples/) that helped me figure out how to implement animating curved paths in JavaScript.
 
 Also thank you to Or-Aviram for his [Draw Field on condition](https://forum.unity.com/threads/draw-a-field-only-if-a-condition-is-met.448855/). Which I'm not actively using, but the code is added to my project and I anticipate that I will be using it eventually.
 

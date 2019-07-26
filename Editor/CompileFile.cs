@@ -28,6 +28,10 @@ public class CompileFile : MonoBehaviour
         {
             File.Copy("Assets/ARjs_Unity/Icons/fullscreen.png", "Assets/AR.js-master/aframe/fullscreen.png");
         }
+        if (!File.Exists("Assets/AR.js-master/aframe/exit_fullscreen.png"))
+        {
+            File.Copy("Assets/ARjs_Unity/Icons/exit_fullscreen.png", "Assets/AR.js-master/aframe/exit_fullscreen.png");
+        }
         string fileName = "index.html";
         bool hasVideo = false;
 
@@ -40,15 +44,11 @@ public class CompileFile : MonoBehaviour
     <a-entity id=""mouseCursor"" cursor=""rayOrigin: mouse"" raycaster=""objects: .intersectable; useWorldCoordinates: true;""></a-entity>";
         string buttonHTML = "<div style='position: absolute; bottom: 10px; right: 30px; width:100%; text-align: center; z-index: 1;'>\n      <button id=\"mutebutton\" style='position: absolute; bottom: 10px'>\n          Unmute\n      </button>\n  </div>";
         string fullscreenButtonHTML = "<div style='position: absolute; bottom: 5px; left: 30px; width:100%; text-align: right; z-index: 1;'>\n        <input type=\"image\" id=\"fullscreen\" src=\"../fullscreen.png\" style='position: absolute; bottom: 0px; right: 35px;'>\n        </input>\n    </div>";
-        string fullscreenButtonActionHTML = "fullbutton.addEventListener(\"click\", function (evt) {\n                if (elem.requestFullscreen) {\n                    elem.requestFullscreen();\n                } else if (elem.mozRequestFullScreen) {\n                    /* Firefox */\n                    elem.mozRequestFullScreen();\n                } else if (elem.webkitRequestFullscreen) {\n                    /* Chrome, Safari and Opera */\n                    elem.webkitRequestFullscreen();\n                } else if (elem.msRequestFullscreen) {\n                    /* IE/Edge */\n                    elem.msRequestFullscreen();\n                }\n            });";
+        string fullscreenButtonActionHTML = "fullbutton.addEventListener(\"click\", function (evt) {\n                if (fullscreen == 0) {\n                    if (elem.requestFullscreen) {\n                        elem.requestFullscreen();\n                    } else if (elem.mozRequestFullScreen) {\n                        /* Firefox */\n                        elem.mozRequestFullScreen();\n                    } else if (elem.webkitRequestFullscreen) {\n                        /* Chrome, Safari and Opera */\n                        elem.webkitRequestFullscreen();\n                    } else if (elem.msRequestFullscreen) {\n                        /* IE/Edge */\n                        elem.msRequestFullscreen();\n                    }\n                    fullbutton.setAttribute(\"src\", \"../exit_fullscreen.png\");\n                    fullscreen = 1;\n                } else {\n                    if (document.exitFullscreen) {\n                        document.exitFullscreen();\n                    } else if (document.webkitExitFullscreen) {\n                        document.webkitExitFullscreen();\n                    } else if (document.mozCancelFullScreen) {\n                        document.mozCancelFullScreen();\n                    } else if (document.msExitFullscreen) {\n                        document.msExitFullscreen();\n                    }\n                    fullbutton.setAttribute(\"src\", \"../fullscreen.png\");\n                    fullscreen = 0;\n                }\n\n            });";
         string patternName = GameObject.FindWithTag("ImageTarget").GetComponent<ImageTarget>().patternName;
         string presetText = $"preset=\"hiro\" emitevents=\"true\" button";
         if (patternName != "default") presetText = $"type=\"pattern\" preset=\"custom\" src=\"{patternName}\" url=\"{patternName}\" emitevents=\"true\" button";
         string markerHTML = "<a-marker id=\"marker\" " + presetText + ">";
-//        string bottomHTML = @"  <a-marker-camera " + presetText + @"></a-marker-camera>
-//        </a-scene>
-//</body>
-//</html>";
         string bottomHTML = @"</a-marker>
         <a-entity camera></a-entity>
         </a-scene>
@@ -74,6 +74,39 @@ public class CompileFile : MonoBehaviour
         //Adds in the actions of the children to javascript.
         sb.AppendLine("<!-- BEGIN: Unity Compiled Events -->");
         sb.AppendLine("<script>");
+
+        //GLOBALS FOR ANIMATION UPDATE
+        sb.AppendLine("var markerFound = 0;");
+        bool hasBezier = false;
+        for (int i = 0; i < imageTarget.childCount; i++)
+        {
+            GameObject childToAdd = imageTarget.GetChild(i).gameObject;
+            for(int j = 0; j<childToAdd.transform.childCount; j++)
+            {
+                if (childToAdd.transform.GetChild(j).name.ToLower().Contains("bezier"))
+                {
+                    hasBezier = true;
+                }
+            }
+        }
+        if (hasBezier)
+        {
+            //sb.AppendLine("var subtractTime = 0;");
+            for (int i = 0; i < imageTarget.childCount; i++)
+            {
+                GameObject childToAdd = imageTarget.GetChild(i).gameObject;
+                string childID = childToAdd.name + "_" + i;
+                Bezier bez = childToAdd.GetComponentInChildren<Bezier>();
+                if (bez != null)
+                {
+                    sb.AppendLine("var " + childID + "_CurrentPoint = 0;");
+                    sb.AppendLine("var " + childID + "_SubtractTime = 0;");
+                    sb.AppendLine("var " + childID + "_PointsArray = " + bez.PointsListString() + ";");
+                }
+            }
+        }
+        //END GLOBALS FOR ANIMATION UPDATE
+
         sb.AppendLine("AFRAME.registerComponent('button', {");
         sb.AppendLine("init: function () {");
         sb.AppendLine($"var elem = document.documentElement;");
@@ -88,8 +121,9 @@ public class CompileFile : MonoBehaviour
                 hasVideo = true;
             }
         }
-        if (hasVideo) sb.AppendLine($"var button = document.querySelector(\"#mutebutton\");");
-            for (int i = 0; i < imageTarget.childCount; i++)
+        if(hasVideo) sb.AppendLine($"var button = document.querySelector(\"#mutebutton\");");
+
+        for (int i = 0; i < imageTarget.childCount; i++)
         {
             GameObject childToAdd = imageTarget.GetChild(i).gameObject;
             string id = childToAdd.name + "_" + i;
@@ -104,7 +138,36 @@ public class CompileFile : MonoBehaviour
                 sb.AppendLine($"var {id} = document.querySelector(\"#{childToAdd.name + "_Asset_" + i}\");");
             }
         }
+        //marker event listeners
+        sb.AppendLine("marker.addEventListener(\"markerFound\", function (evt) {");
+        sb.AppendLine("markerFound = 1;");
+        for(int i = 0; i<imageTarget.childCount; i++)
+        {
+            GameObject childToAdd = imageTarget.GetChild(i).gameObject;
+            string id = childToAdd.name + "_" + i;
 
+            if(childToAdd.tag == "Video")
+            {
+                string lineToAppend = id + ".play();";
+                sb.AppendLine(lineToAppend);
+            }
+        }
+        sb.AppendLine("});");
+        sb.AppendLine("marker.addEventListener(\"markerLost\", function (evt) {");
+        sb.AppendLine("markerFound = 0;");
+        for (int i = 0; i < imageTarget.childCount; i++)
+        {
+            GameObject childToAdd = imageTarget.GetChild(i).gameObject;
+            string id = childToAdd.name + "_" + i;
+
+            if (childToAdd.tag == "Video")
+            {
+                string lineToAppend = id + ".pause();";
+                sb.AppendLine(lineToAppend);
+            }
+        }
+        sb.AppendLine("});");
+        //end marker event listeners
         for (int i = 0; i < imageTarget.childCount; i++)
         {
             GameObject childToAdd = imageTarget.GetChild(i).gameObject;
@@ -112,19 +175,18 @@ public class CompileFile : MonoBehaviour
 
             if (childToAdd.GetComponent<ButtonHelper>() != null)
             {
-                sb.AppendLine(id + @".addEventListener(""mousedown"", function(evt){");
                 sb.AppendLine(@"open(""" + childToAdd.GetComponent<ButtonHelper>().URL + @""");");
+                sb.AppendLine(id + @".addEventListener(""mousedown"", function(evt){");
                 sb.AppendLine("});");
             }
-
             if (childToAdd.tag == "Video")
             {
-                string lineToAppend = "marker.addEventListener(\"markerFound\", function (evt) {\n" +
-                	id + ".play();\n" +
-                	"});\n" +
-                	"marker.addEventListener(\"markerLost\", function (evt) {\n" +
-                	id + ".pause();\n" +
-                	"});";
+                //string lineToAppend = "marker.addEventListener(\"markerFound\", function (evt) {\n" +
+                	//id + ".play();\n" +
+                	//"});\n" +
+                	//"marker.addEventListener(\"markerLost\", function (evt) {\n" +
+                	//id + ".pause();\n" +
+                	//"});";
                 
                 string secondLine = "button.addEventListener(\"click\", function(evt){\n" +
                 	"console.log(\"button clicked\")\n" +
@@ -138,13 +200,89 @@ public class CompileFile : MonoBehaviour
                 	"});";
 
 
-                sb.AppendLine(lineToAppend);
+                //sb.AppendLine(lineToAppend);
                 sb.AppendLine(secondLine);
             }
         }
+        //end marker event listeners
 
         sb.AppendLine(fullscreenButtonActionHTML);
+        sb.AppendLine("},");
+        //BEGIN: Tick function for bezier animations
+        sb.AppendLine("tick: function (totalTime, deltaTime) {");
+        for (int i = 0; i < imageTarget.childCount; i++)
+        {
+            GameObject childToAdd = imageTarget.GetChild(i).gameObject;
+            string id = childToAdd.name + "_" + i;
+            Bezier bez = childToAdd.GetComponentInChildren<Bezier>();
+            if (bez != null)
+            {
+                sb.AppendLine($"var {id} = document.querySelector(\"#{id}\");");
+                sb.AppendLine($"var {id}_Speed = {bez.speed/60};");
+                sb.AppendLine($"var {id}_Time = (totalTime - {id}_SubtractTime) / 1000;");
+            }
+        }
+        //sb.AppendLine("var time = (totalTime - subtractTime) / 1000;");
+        sb.AppendLine("var dTime = deltaTime / 1000;");
+        sb.AppendLine("");
+        sb.AppendLine("if (markerFound == 1) {");
+        for (int i = 0; i < imageTarget.childCount; i++)
+        {
+            GameObject childToAdd = imageTarget.GetChild(i).gameObject;
+            string id = childToAdd.name + "_" + i;
+            Bezier bez = childToAdd.GetComponentInChildren<Bezier>();
+            if (bez != null)
+            {
+                sb.AppendLine($"{id}_Update();");
+            }
+        }
         sb.AppendLine("}");
+        sb.AppendLine();
+        for (int i = 0; i < imageTarget.childCount; i++)
+        {
+            GameObject childToAdd = imageTarget.GetChild(i).gameObject;
+            string id = childToAdd.name + "_" + i;
+            Bezier bez = childToAdd.GetComponentInChildren<Bezier>();
+            if (bez != null)
+            {
+                sb.AppendLine($"function {id}_Update()" + " {");
+                sb.AppendLine($"var newPosition = bezierPath({id}_PointsArray[{id}_CurrentPoint], {id}_PointsArray[{id}_CurrentPoint + 1], { id}_PointsArray[{ id}_CurrentPoint + 2], { id}_PointsArray[{ id}_CurrentPoint + 3], {id}_Time *{ id}_Speed);");
+                sb.AppendLine();
+                sb.AppendLine($"if ({id}_Time*{id}_Speed>1) " + "{");
+                sb.AppendLine($"{id}_CurrentPoint += 3;");
+                sb.AppendLine($"{id}_SubtractTime = totalTime;");
+                sb.AppendLine($"if ({id}_CurrentPoint >= {id}_PointsArray.length - 3) " + "{");
+                sb.AppendLine($"{id}_CurrentPoint = 0;");
+                sb.AppendLine("}");
+                sb.AppendLine("}");
+                sb.AppendLine();
+                sb.AppendLine($"{id}.setAttribute('position', " + "{");
+                sb.AppendLine("x: newPosition.x,");
+                sb.AppendLine("y: newPosition.y,");
+                sb.AppendLine("z: newPosition.z,");
+                sb.AppendLine("});");
+                sb.AppendLine("}");
+            }
+        }
+
+        sb.AppendLine("function bezierEvaluate(p0, p1, p2, p3, t) {\n                " +
+        	"var u = (1 - t);\n                " +
+        	"var uu = u * u;\n                " +
+        	"var uuu = u * u * u;\n                " +
+        	"var tt = t * t;\n                " +
+        	"var ttt = t * t * t;\n                " +
+        	"//B(t) = (1-t)^3*P0 + 3*(1-t)^2*t*P1 + 3*(1-t)*t^2*P2 + t^3*P3 , 0 < t < 1\n                " +
+        	"return (uuu * p0 + 3 * uu * t * p1 + 3 * u * tt * p2 + ttt * p3);\n\n            " +
+        	"}\n           " +
+        	"function bezierPath(p0, p1, p2, p3, t) {\n                " +
+        	"return new THREE.Vector3(\n                    " +
+        	"bezierEvaluate(p0.x, p1.x, p2.x, p3.x, t),\n                    " +
+        	"bezierEvaluate(p0.y, p1.y, p2.y, p3.y, t),\n                    " +
+        	"bezierEvaluate(p0.z, p1.z, p2.z, p3.z, t)\n                " +
+        	");\n            " +
+        	"}\n\n        " +
+        	"}");
+        //END: Tick function for bezier animations
         sb.AppendLine("});");
         sb.AppendLine("</script>");
         sb.AppendLine("<!-- END: Unity Compiled Events -->");
