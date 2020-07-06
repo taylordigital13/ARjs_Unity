@@ -30,7 +30,7 @@ public class AddCustomModel : ScriptableWizard
         }
 
         string objName = AssetDatabase.GetAssetPath(objFile).Split('/')[AssetDatabase.GetAssetPath(objFile).Split('/').Length - 1];
-        if (!objName.Contains(".obj"))
+        if (!objName.ToLower().Contains(".obj"))
         {
             Debug.LogError("Only .obj files are supported at this time.");
             return;
