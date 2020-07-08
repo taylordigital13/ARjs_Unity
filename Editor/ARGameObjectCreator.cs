@@ -125,6 +125,74 @@ public class ARGameObjectCreator : MonoBehaviour
         AssetDatabase.Refresh();
     }
 
+    [MenuItem("GameObject/AR.js/Directional Light", false, 15)]
+    static void PlaceDirectionalLightPrefabInScene()
+    {
+        GameObject directionalLight = AssetDatabase.LoadAssetAtPath(pathToUse + "DirectionalLight.prefab", typeof(GameObject)) as GameObject;
+        GameObject sceneDirectionalLight;
+        if (Selection.activeGameObject != null)
+        {
+            sceneDirectionalLight = Instantiate(directionalLight, Vector3.zero, Quaternion.identity, Selection.activeGameObject.transform) as GameObject;
+        }
+        else
+        {
+            sceneDirectionalLight = Instantiate(directionalLight, Vector3.zero, Quaternion.identity);
+        }
+
+        Selection.activeObject = sceneDirectionalLight;
+        HelperFunctions.AddTag("DirectionalLight");
+        sceneDirectionalLight.transform.tag = "DirectionalLight";
+        sceneDirectionalLight.name = "DirectionalLight";
+        AssetDatabase.Refresh();
+    }
+
+    [MenuItem("GameObject/AR.js/Spot Light", false, 15)]
+    static void PlaceSpotLightPrefabInScene()
+    {
+        GameObject spotLight = AssetDatabase.LoadAssetAtPath(pathToUse + "SpotLight.prefab", typeof(GameObject)) as GameObject;
+        GameObject sceneSpotLight;
+        if (Selection.activeGameObject != null)
+        {
+            sceneSpotLight = Instantiate(spotLight, Vector3.zero, Quaternion.identity, Selection.activeGameObject.transform) as GameObject;
+        }
+        else
+        {
+            sceneSpotLight = Instantiate(spotLight, Vector3.zero, Quaternion.identity);
+        }
+
+        Selection.activeObject = sceneSpotLight;
+        HelperFunctions.AddTag("SpotLight");
+        sceneSpotLight.transform.tag = "SpotLight";
+        sceneSpotLight.name = "SpotLight";
+        AssetDatabase.Refresh();
+    }
+
+    [MenuItem("GameObject/AR.js/Create Project Settings", false, 16)]
+    static void CreateProjectSettings()
+    {
+        if (GameObject.FindObjectOfType<ProjectSettings>() == null)
+        {
+            GameObject prjSettings = AssetDatabase.LoadAssetAtPath(pathToUse + "[ProjectSettings].prefab", typeof(GameObject)) as GameObject;
+            GameObject scenePrjSettings;
+            if (Selection.activeGameObject != null)
+            {
+                scenePrjSettings = Instantiate(prjSettings, Vector3.zero, Quaternion.identity, Selection.activeGameObject.transform) as GameObject;
+            }
+            else
+            {
+                scenePrjSettings = Instantiate(prjSettings, Vector3.zero, Quaternion.identity);
+            }
+
+            Selection.activeObject = scenePrjSettings;
+            scenePrjSettings.name = "ProjectSettings";
+            AssetDatabase.Refresh();
+        }
+        else
+        {
+            Debug.LogWarning("ProjectSettings already exist!");
+        }
+    }
+
     //[MenuItem("GameObject/AR.js/DebugInfo", false, 14)]
     //static void DebugInfo()
     //{

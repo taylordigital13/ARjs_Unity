@@ -4,12 +4,42 @@ using System.IO;
 using System.Text;
 using UnityEngine.SceneManagement;
 using UnityEngine.Video;
+using UnityEngine.Experimental.GlobalIllumination;
+using UnityEditor.Experimental.GraphView;
 
 public class CompileFile : MonoBehaviour
 {
     private const string aFrameLib = "https://aframe.io/releases/1.0.4/aframe.min.js";
     private const string aFrameExtrasLib = "https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.0/dist/aframe-extras.min.js";
     private const string arJsLib = "https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js";
+
+    static string pathToUse = "Assets/ARjs_Unity/Prefabs/";
+
+    [MenuItem("AR.js/Create Project Settings", false)]
+    static void CreateProjectSettings()
+    {
+        if (GameObject.FindObjectOfType<ProjectSettings>() == null)
+        {
+            GameObject prjSettings = AssetDatabase.LoadAssetAtPath(pathToUse + "[ProjectSettings].prefab", typeof(GameObject)) as GameObject;
+            GameObject scenePrjSettings;
+            if (Selection.activeGameObject != null)
+            {
+                scenePrjSettings = Instantiate(prjSettings, Vector3.zero, Quaternion.identity, Selection.activeGameObject.transform) as GameObject;
+            }
+            else
+            {
+                scenePrjSettings = Instantiate(prjSettings, Vector3.zero, Quaternion.identity);
+            }
+
+            Selection.activeObject = scenePrjSettings;
+            scenePrjSettings.name = "ProjectSettings";
+            AssetDatabase.Refresh();
+        }
+        else
+        {
+            Debug.LogWarning("ProjectSettings already exist!");
+        }
+    }
 
     [MenuItem("AR.js/Compile Files", true)]
     static bool CompileFileHTMLingvalidation()
@@ -47,7 +77,7 @@ public class CompileFile : MonoBehaviour
         #region HTML Strings
 
         string aframeString = "<script src=\"" + aFrameLib + "\"></script>";
-        string topHTML = $"<!DOCTYPE html>\n<!-- include aframe -->\n {aframeString} \n<!-- include ar.js -->\n<script src=\"" + arJsLib + "\"></script>\n\n<!-- to load .ply model -->\n<script src=\"" + aFrameExtrasLib + "\"></script>\n\n";
+        string topHTML = $"<!DOCTYPE html>\n<!-- include aframe -->\n {aframeString} \n<!-- include ar.js -->\n<script src=\"" + arJsLib + "\"></script>\n<!-- to load .ply model -->\n<script src=\"" + aFrameExtrasLib + "\"></script>\n";
         string bodyHtml = @"<body style='margin : 0px; overflow: hidden; font-family: Monospace;'>";
         string middleHTML = @"<!-- <a-scene embedded arjs='debugUIEnabled: false; sourceType: video; sourceUrl:../../data/videos/headtracking.mp4;'> -->
     <a-scene embedded arjs='debugUIEnabled: false; sourceType: webcam' vr-mode-ui='enabled: false'>
@@ -57,14 +87,10 @@ public class CompileFile : MonoBehaviour
         string fullscreenButtonActionHTML = "fullbutton.addEventListener(\"click\", function (evt) {\n                if (fullscreen == 0) {\n                    if (elem.requestFullscreen) {\n                        elem.requestFullscreen();\n                    } else if (elem.mozRequestFullScreen) {\n                        /* Firefox */\n                        elem.mozRequestFullScreen();\n                    } else if (elem.webkitRequestFullscreen) {\n                        /* Chrome, Safari and Opera */\n                        elem.webkitRequestFullscreen();\n                    } else if (elem.msRequestFullscreen) {\n                        /* IE/Edge */\n                        elem.msRequestFullscreen();\n                    }\n                    fullbutton.setAttribute(\"src\", \"../exit_fullscreen.png\");\n                    fullscreen = 1;\n                } else {\n                    if (document.exitFullscreen) {\n                        document.exitFullscreen();\n                    } else if (document.webkitExitFullscreen) {\n                        document.webkitExitFullscreen();\n                    } else if (document.mozCancelFullScreen) {\n                        document.mozCancelFullScreen();\n                    } else if (document.msExitFullscreen) {\n                        document.msExitFullscreen();\n                    }\n                    fullbutton.setAttribute(\"src\", \"../fullscreen.png\");\n                    fullscreen = 0;\n                }\n\n            });";
         string patternName = GameObject.FindWithTag("ImageTarget").GetComponent<ImageTarget>().patternName;
         string presetText = $"preset=\"hiro\" emitevents=\"true\" button";
-        if (patternName != "default") presetText = $"type=\"pattern\" preset=\"custom\" src=\" {patternName} \" url=\" {patternName} \" emitevents=\"true\" button";
+        if (patternName != "default") presetText = $"type=\"pattern\" preset=\"custom\" src=\"{patternName}\" url=\"{patternName}\" emitevents=\"true\" button";
         string markerHTML = "<a-marker id=\"marker\" " + presetText + ">";
-        string bottomHTML = @"</a-marker>
-        <a-entity camera></a-entity>
-        </a-scene>
-</body>
-</html>";
-
+        string bottomHTML = $"</a-marker>\n<a-entity camera></a-entity>\n</a-scene>\n</body>\n</html>\n";
+        
         #endregion
 
         StringBuilder sb = new StringBuilder();
@@ -87,6 +113,7 @@ public class CompileFile : MonoBehaviour
         #region Unity Compiled Events
 
         //Adds in the actions of the children to javascript.
+        sb.AppendLine("");
         sb.AppendLine("<!-- BEGIN: Unity Compiled Events -->");
         sb.AppendLine("<script>");
 
@@ -317,8 +344,14 @@ public class CompileFile : MonoBehaviour
 
         sb.AppendLine("<!-- BEGIN: Unity Compiled Assets -->");
         sb.AppendLine("<a-assets>");
+
         for (int i = 0; i < imageTarget.childCount; i++)
         {
+            if(!imageTarget.GetChild(i).gameObject.activeSelf)
+            {
+                continue;
+            }
+
             GameObject childToAdd = imageTarget.GetChild(i).gameObject;
             if(childToAdd.tag == "Video")
             {
@@ -355,10 +388,13 @@ public class CompileFile : MonoBehaviour
                 }
             }
         }
+        
         sb.AppendLine("</a-assets>");
         sb.AppendLine("<!-- END: Unity Compiled Assets -->");
+
         #endregion Unity Compiled Assets
 
+        sb.AppendLine("");
         sb.AppendLine("<!-- BEGIN: Add Image Target (marker) -->");
         sb.AppendLine(markerHTML);
         sb.AppendLine("<!-- END: Add Image Target (marker) -->");
@@ -373,119 +409,174 @@ public class CompileFile : MonoBehaviour
             // Aggiungo l'oggetto nell'html solo se è attivo nella gerarchia, altrimenti passo al successivo e così via
             if (!imageTarget.GetChild(i).gameObject.activeSelf) 
             {
-                return;
+                continue;
             }
 
             GameObject childToAdd = imageTarget.GetChild(i).gameObject;
-            Texture2D objectTexture = (Texture2D)childToAdd.GetComponentInChildren<MeshRenderer>().sharedMaterial.mainTexture;
             string textureName = null;
             bool transparency = false;
-            if (objectTexture != null && childToAdd.tag!="Model")
-            {
-                textureName = objectTexture.name;
-                byte[] bytes = objectTexture.EncodeToPNG();
-                if (!Directory.Exists(folderPath + "textures/")) Directory.CreateDirectory(folderPath + "textures/");
-                File.WriteAllBytes(folderPath + "textures/" + textureName + ".png", bytes);
-                transparency = true;
 
+            if (childToAdd.GetComponentInChildren<MeshRenderer>() != null)
+            {
+                Texture2D objectTexture = (Texture2D)childToAdd.GetComponentInChildren<MeshRenderer>().sharedMaterial.mainTexture;
+
+                if (objectTexture != null && childToAdd.tag != "Model")
+                {
+                    textureName = objectTexture.name;
+                    byte[] bytes = objectTexture.EncodeToPNG();
+                    if (!Directory.Exists(folderPath + "textures/")) Directory.CreateDirectory(folderPath + "textures/");
+                    File.WriteAllBytes(folderPath + "textures/" + textureName + ".png", bytes);
+                    transparency = true;
+                }
             }
+
             switch (childToAdd.tag)
             {
                 case "Plane":
-                    var Plane = (width: childToAdd.transform.localScale.x, height: childToAdd.transform.localScale.y,
-                                position: -childToAdd.transform.localPosition.x / 10 + " " + childToAdd.transform.localPosition.y / 10 + " " + childToAdd.transform.localPosition.z / 10,
-                                rotation: childToAdd.transform.localEulerAngles.x + " " + -childToAdd.transform.localEulerAngles.y + " " + -childToAdd.transform.localEulerAngles.z,
+                    var Plane = (width: (childToAdd.transform.localScale.x).ToString().Replace(",", "."), 
+                                height: (childToAdd.transform.localScale.y).ToString().Replace(",", "."),
+                                position: (-childToAdd.transform.localPosition.x / 10 + " " + childToAdd.transform.localPosition.y / 10 + " " + childToAdd.transform.localPosition.z / 10).ToString().Replace(",", "."),
+                                rotation: (childToAdd.transform.localEulerAngles.x + " " + -childToAdd.transform.localEulerAngles.y + " " + -childToAdd.transform.localEulerAngles.z).ToString().Replace(",", "."),
                                 color: "#" + ColorUtility.ToHtmlStringRGB(childToAdd.GetComponentInChildren<MeshRenderer>().sharedMaterial.color),
                                 src: textureName != null ? "textures/" + textureName + ".png" : "");
-                    sb.AppendLine($"<a-plane src=\"{Plane.src}\" id=\"{childToAdd.name + "_" + i}\" class=\"intersectable\" width=\"{Plane.width}\" height=\"{Plane.height}\" position=\"{Plane.position}\" rotation=\"{Plane.rotation}\" color=\"{Plane.color}\" transparent={transparency}");
+                    sb.AppendLine($"<a-plane src=\"{Plane.src}\" id=\"{childToAdd.name + "_" + i}\" class=\"intersectable\" width=\"{Plane.width}\" height=\"{Plane.height}\" position=\"{Plane.position}\" rotation=\"{Plane.rotation}\" color=\"{Plane.color}\" transparent={transparency}>");
 
                     string planeID = childToAdd.name.ToLower() + "_" + i;
 
                     // Faccio un check per verificare eventuali animazioni da abilitare
                     CheckAnimation(childToAdd, planeID, sb);
 
-                    sb.AppendLine("></a-plane>");
+                    sb.AppendLine("</a-plane>");
                     break;
 
                 case "Video":
-                    string videoID = childToAdd.name.ToLower() + "_" + i;
-                    var Video = (width: childToAdd.transform.localScale.x, height: childToAdd.transform.localScale.y,
-                                position: -childToAdd.transform.localPosition.x / 10 + " " + childToAdd.transform.localPosition.y / 10 + " " + childToAdd.transform.localPosition.z / 10,
-                                rotation: childToAdd.transform.localEulerAngles.x + " " + -childToAdd.transform.localEulerAngles.y + " " + -childToAdd.transform.localEulerAngles.z,
+                    var Video = (width: (childToAdd.transform.localScale.x).ToString().Replace(",", "."), 
+                                height: (childToAdd.transform.localScale.y).ToString().Replace(",", "."),
+                                position: (-childToAdd.transform.localPosition.x / 10 + " " + childToAdd.transform.localPosition.y / 10 + " " + childToAdd.transform.localPosition.z / 10).ToString().Replace(",", "."),
+                                rotation: (childToAdd.transform.localEulerAngles.x + " " + -childToAdd.transform.localEulerAngles.y + " " + -childToAdd.transform.localEulerAngles.z).ToString().Replace(",", "."),
                                 color: "#" + ColorUtility.ToHtmlStringRGB(childToAdd.GetComponentInChildren<MeshRenderer>().sharedMaterial.color),
                                 src: "#" + childToAdd.name + "_Asset_" + i);
-                    sb.AppendLine($"<a-video src=\"{Video.src}\" id=\"{childToAdd.name + "_" + i}\" class=\"intersectable\" width=\"{Video.width}\" height=\"{Video.height}\" position=\"{Video.position}\" rotation=\"{Video.rotation}\" color=\"{Video.color}\" transparent={transparency}");
+                    sb.AppendLine($"<a-video src=\"{Video.src}\" id=\"{childToAdd.name + "_" + i}\" class=\"intersectable\" width=\"{Video.width}\" height=\"{Video.height}\" position=\"{Video.position}\" rotation=\"{Video.rotation}\" color=\"{Video.color}\" transparent={transparency}>");
+
+                    string videoID = childToAdd.name.ToLower() + "_" + i;
 
                     // Faccio un check per verificare eventuali animazioni da abilitare
                     CheckAnimation(childToAdd, videoID, sb);
                     
-                    sb.AppendLine("></a-video>");
+                    sb.AppendLine("</a-video>");
                     break;
 
                 case "Cube":
-                    var Cube = (width: childToAdd.transform.localScale.x/10, height: childToAdd.transform.localScale.y / 10, depth: childToAdd.transform.localScale.z / 10,
-                                position: -childToAdd.transform.localPosition.x / 10 + " " + childToAdd.transform.localPosition.y / 10 + " " + childToAdd.transform.localPosition.z / 10,
-                                rotation: childToAdd.transform.localEulerAngles.x + " " + -childToAdd.transform.localEulerAngles.y + " " + -childToAdd.transform.localEulerAngles.z,
+                    var Cube = (width: (childToAdd.transform.localScale.x / 10).ToString().Replace(",", "."), 
+                                height: (childToAdd.transform.localScale.y / 10).ToString().Replace(",", "."), 
+                                depth: (childToAdd.transform.localScale.z / 10).ToString().Replace(",", "."),
+                                position: (-childToAdd.transform.localPosition.x / 10 + " " + childToAdd.transform.localPosition.y / 10 + " " + childToAdd.transform.localPosition.z / 10).Replace(",", "."),
+                                rotation: (childToAdd.transform.localEulerAngles.x + " " + -childToAdd.transform.localEulerAngles.y + " " + -childToAdd.transform.localEulerAngles.z).Replace(",", "."),
                                 color: "#" + ColorUtility.ToHtmlStringRGB(childToAdd.GetComponent<MeshRenderer>().sharedMaterial.color),
                                 src: textureName!=null?"textures/" + textureName + ".png" : "");
-                    sb.AppendLine($"<a-box src=\"{Cube.src}\" id=\"{childToAdd.name + "_" + i}\" class=\"intersectable\" width=\"{Cube.width}\" height=\"{Cube.height}\" depth=\"{Cube.depth}\" position=\"{Cube.position}\" rotation=\"{Cube.rotation}\" color=\"{Cube.color}\" transparent={transparency}");
+
+                    sb.AppendLine($"<a-box src=\"{Cube.src}\" id=\"{childToAdd.name + "_" + i}\" class=\"intersectable\" width=\"{Cube.width}\" height=\"{Cube.height}\" depth=\"{Cube.depth}\" position=\"{Cube.position}\" rotation=\"{Cube.rotation}\" color=\"{Cube.color}\" transparent={transparency}>");
 
                     string cubeID = childToAdd.name.ToLower() + "_" + i;
 
                     // Faccio un check per verificare eventuali animazioni da abilitare
                     CheckAnimation(childToAdd, cubeID, sb);
 
-                    sb.AppendLine("></a-box>");
+                    sb.AppendLine("</a-box>");
                     break;
 
                 case "Model":
-                    string modelID = childToAdd.name.ToLower() + "_" + i;
-
-                    var Model = (width: childToAdd.transform.localScale.x / 10, height: childToAdd.transform.localScale.y / 10, depth: childToAdd.transform.localScale.z / 10,
-                                position: -childToAdd.transform.localPosition.x / 10 + " " + childToAdd.transform.localPosition.y / 10 + " " + childToAdd.transform.localPosition.z / 10,
-                                rotation: childToAdd.transform.localEulerAngles.x + " " + -childToAdd.transform.localEulerAngles.y + " " + -childToAdd.transform.localEulerAngles.z,
+                    var Model = (width: (childToAdd.transform.localScale.x / 10).ToString().Replace(",", "."), 
+                                height: (childToAdd.transform.localScale.y / 10).ToString().Replace(",", "."), 
+                                depth: (childToAdd.transform.localScale.z / 10).ToString().Replace(",", "."),
+                                position: (-childToAdd.transform.localPosition.x / 10 + " " + childToAdd.transform.localPosition.y / 10 + " " + childToAdd.transform.localPosition.z / 10).Replace(",", "."),
+                                rotation: (childToAdd.transform.localEulerAngles.x + " " + -childToAdd.transform.localEulerAngles.y + " " + -childToAdd.transform.localEulerAngles.z).Replace(",", "."),
                                 color: "#ffffff",
                                 src: textureName != null ? "textures/" + textureName + ".png" : "");
-                    sb.AppendLine($"<a-entity obj-model=\"obj: #{childToAdd.name + "_Asset_obj_" + i}; mtl: #{childToAdd.name + "_Asset_mtl_" + i}\" id=\"{childToAdd.name + "_" + i}\" class=\"intersectable\" scale=\"{Model.width} {Model.height} {Model.depth}\" position=\"{Model.position}\" rotation=\"{Model.rotation}\" color=\"{Model.color}\" transparent={transparency}");
+                    sb.AppendLine($"<a-entity obj-model=\"obj: #{childToAdd.name + "_Asset_obj_" + i}; mtl: #{childToAdd.name + "_Asset_mtl_" + i}\" id=\"{childToAdd.name + "_" + i}\" class=\"intersectable\" scale=\"{Model.width} {Model.height} {Model.depth}\" position=\"{Model.position}\" rotation=\"{Model.rotation}\" color=\"{Model.color}\" transparent={transparency}>");
 
+                    string modelID = childToAdd.name.ToLower() + "_" + i;
 
                     // Faccio un check per verificare eventuali animazioni da abilitare
                     CheckAnimation(childToAdd, modelID, sb);
 
-                    sb.AppendLine("></a-entity>");
+                    sb.AppendLine("</a-entity>");
                     break;
 
                 case "Sphere":
-                    var Sphere = (radius: childToAdd.transform.localScale.x / 20,
-                                position: -childToAdd.transform.localPosition.x / 10 + " " + childToAdd.transform.localPosition.y / 10 + " " + childToAdd.transform.localPosition.z / 10,
-                                rotation: childToAdd.transform.localEulerAngles.x + " " + -childToAdd.transform.localEulerAngles.y + " " + -childToAdd.transform.localEulerAngles.z,
+                    var Sphere = (radius: (childToAdd.transform.localScale.x / 20).ToString().Replace(",", "."),
+                                position: (-childToAdd.transform.localPosition.x / 10 + " " + childToAdd.transform.localPosition.y / 10 + " " + childToAdd.transform.localPosition.z / 10).Replace(",", "."),
+                                rotation: (childToAdd.transform.localEulerAngles.x + " " + -childToAdd.transform.localEulerAngles.y + " " + -childToAdd.transform.localEulerAngles.z).Replace(",", "."),
                                 color: "#" + ColorUtility.ToHtmlStringRGB(childToAdd.GetComponent<MeshRenderer>().sharedMaterial.color),
                                 src: textureName != null ? "textures/" + textureName + ".png" : "");
+                    
                     Debug.Log(Sphere.src);
-                    sb.AppendLine($"<a-sphere src=\"{Sphere.src}\" id=\"{childToAdd.name + "_" + i}\" class=\"intersectable\" radius=\"{Sphere.radius}\" position=\"{Sphere.position}\" rotation=\"{Sphere.rotation}\" color=\"{Sphere.color}\" transparent={transparency}");
                     string sphereID = childToAdd.name.ToLower() + "_" + i;
+
+                    sb.AppendLine($"<a-sphere src=\"{Sphere.src}\" id=\"{childToAdd.name + "_" + i}\" class=\"intersectable\" radius=\"{Sphere.radius}\" position=\"{Sphere.position}\" rotation=\"{Sphere.rotation}\" color=\"{Sphere.color}\" transparent={transparency}>");
 
                     // Faccio un check per verificare eventuali animazioni da abilitare
                     CheckAnimation(childToAdd, sphereID, sb);
 
-                    sb.AppendLine("></a-sphere>");
-
+                    sb.AppendLine("</a-sphere>");
                     break;
 
                 case "Cylinder":
-                    var Cylinder = (radius: (childToAdd.transform.localScale.x + childToAdd.transform.localScale.z) / 40, height: childToAdd.transform.localScale.y / 5,
-                                position: -childToAdd.transform.localPosition.x / 10 + " " + childToAdd.transform.localPosition.y / 10 + " " + childToAdd.transform.localPosition.z / 10,
-                                rotation: childToAdd.transform.localEulerAngles.x + " " + -childToAdd.transform.localEulerAngles.y + " " + -childToAdd.transform.localEulerAngles.z,
+                    var Cylinder = (radius: ((childToAdd.transform.localScale.x + childToAdd.transform.localScale.z) / 40).ToString().Replace(",", "."), 
+                                height: (childToAdd.transform.localScale.y / 5).ToString().Replace(",", "."),
+                                position: (-childToAdd.transform.localPosition.x / 10 + " " + childToAdd.transform.localPosition.y / 10 + " " + childToAdd.transform.localPosition.z / 10).Replace(",", "."),
+                                rotation: (childToAdd.transform.localEulerAngles.x + " " + -childToAdd.transform.localEulerAngles.y + " " + -childToAdd.transform.localEulerAngles.z).Replace(",", "."),
                                 color: "#" + ColorUtility.ToHtmlStringRGB(childToAdd.GetComponent<MeshRenderer>().sharedMaterial.color),
                                 src: textureName != null ? "textures/" + textureName + ".png": "");
+                    
                     Debug.Log(Cylinder.src);
-                    sb.AppendLine($"<a-cylinder src=\"{Cylinder.src}\" id=\"{childToAdd.name + "_" + i}\" class=\"intersectable\" radius=\"{Cylinder.radius}\" height=\"{Cylinder.height}\" position=\"{Cylinder.position}\" rotation=\"{Cylinder.rotation}\" color=\"{Cylinder.color}\" transparent={transparency}");
+                    sb.AppendLine($"<a-cylinder src=\"{Cylinder.src}\" id=\"{childToAdd.name + "_" + i}\" class=\"intersectable\" radius=\"{Cylinder.radius}\" height=\"{Cylinder.height}\" position=\"{Cylinder.position}\" rotation=\"{Cylinder.rotation}\" color=\"{Cylinder.color}\" transparent={transparency}>");
+                    
                     string cylinderID = childToAdd.name.ToLower() + "_" + i;
 
                     // Faccio un check per verificare eventuali animazioni da abilitare
                     CheckAnimation(childToAdd, cylinderID, sb);
 
-                    sb.AppendLine("></a-cylinder>");
+                    sb.AppendLine("</a-cylinder>");
+                    break;
+
+                case "DirectionalLight":
+                    // <a-entity light="type: directional; color: #EEE; intensity: 0.5" position="-1 1 0"></a-entity>
+
+                    string directionalLightID = childToAdd.name.ToLower() + "_" + i;
+
+                    var directionalLight = (position: (-childToAdd.transform.localPosition.x / 10 + " " + childToAdd.transform.localPosition.y / 10 + " " + childToAdd.transform.localPosition.z / 10).Replace(",", "."),
+                                rotation: (childToAdd.transform.localEulerAngles.x + " " + -childToAdd.transform.localEulerAngles.y + " " + -childToAdd.transform.localEulerAngles.z).Replace(",", "."),
+                                color: "#" + ColorUtility.ToHtmlStringRGB(childToAdd.GetComponent<Light>().color),
+                                intensity: (childToAdd.GetComponent<Light>().intensity).ToString().Replace(",", "."),
+                                src: textureName != null ? "textures/" + textureName + ".png" : "");
+                    
+                    sb.AppendLine($"<a-entity light=\"type: directional; color:{directionalLight.color}; intensity:{directionalLight.intensity}\" position=\"{directionalLight.position}\" rotation=\"{directionalLight.rotation}\">");
+
+                    // Faccio un check per verificare eventuali animazioni da abilitare
+                    CheckAnimation(childToAdd, directionalLightID, sb);
+                    
+                    sb.AppendLine("</a-entity>");
+                    break;
+
+                case "SpotLight":
+                    // <a-entity light="type: spot; angle: 45"></a-entity>
+
+                    string spotLightID = childToAdd.name.ToLower() + "_" + i;
+
+                    var spotLight = (position: (-childToAdd.transform.localPosition.x / 10 + " " + childToAdd.transform.localPosition.y / 10 + " " + childToAdd.transform.localPosition.z / 10).Replace(",", ".").Replace(",", "."),
+                                rotation: (childToAdd.transform.localEulerAngles.x + " " + -childToAdd.transform.localEulerAngles.y + " " + -childToAdd.transform.localEulerAngles.z).Replace(",", "."),
+                                color: "#" + ColorUtility.ToHtmlStringRGB(childToAdd.GetComponent<Light>().color),
+                                intensity: (childToAdd.GetComponent<Light>().intensity).ToString().Replace(",", "."),
+                                angle: (childToAdd.GetComponent<Light>().spotAngle).ToString().Replace(",", "."),
+                                src: textureName != null ? "textures/" + textureName + ".png" : "");
+
+                    sb.AppendLine($"<a-entity light=\"type: spot; angle:{spotLight.angle}; color:{spotLight.color}; intensity:{spotLight.intensity}\" position=\"{spotLight.position}\" rotation=\"{spotLight.rotation}\">");
+
+                    // Faccio un check per verificare eventuali animazioni da abilitare
+                    CheckAnimation(childToAdd, spotLightID, sb);
+
+                    sb.AppendLine("</a-entity>");
                     break;
 
                 default:
@@ -506,6 +597,11 @@ public class CompileFile : MonoBehaviour
         File.WriteAllText(folderPath + fileName, sb.ToString());
         Debug.Log("index file successfully created");
         AssetDatabase.Refresh();
+    }
+
+    static private void CheckProjectSettings()
+    {
+        //  <a-light type="ambient" color="#445451"></a-light>
     }
 
     static private void CheckAnimation(GameObject childToAdd, string objectID, StringBuilder sb)
